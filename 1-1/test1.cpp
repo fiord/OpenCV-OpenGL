@@ -1,7 +1,9 @@
 #include <opencv2/opencv.hpp>
+#include <cmath>
 #include <stdio.h>
 #include <string>
 #include <iostream>
+#include <algorithm>
 
 #define FLAG 1 // (0: direct access / 1: built-in function)
 
@@ -86,7 +88,7 @@ void convertColorToGray(cv::Mat &input, cv::Mat &processed)
 
   // 3. create Mat for output-image
   cv::Size s = input.size();
-  processed.create(s, CV_BUC1);
+  processed.create(s, CV_8UC1);
 
   for(int j = 0; j < s.height; j++){
     uchar *ptr1, *ptr2;
@@ -117,12 +119,26 @@ void convertBlur(cv::Mat &input, cv::Mat &processed) {
   processed = planes[0];
 #else
 
-  // gauss関数混ぜるの面倒なので，とりあえず線形にでも混ぜる？
   cv::Size s = input.size();
-  processed.create(s, CV_BUC1);
+  processed.create(s, CV_8UC1);
 
+  for (int i = 0 ; i < s.height; i++) {
+    unsigned char *ptr = processed.ptr<unsigned char>(i);
+    for (int j = 0; j < s.width; j++) {
+      int cnt = 0;
+      int val = 0;
+      for (int y = std::max(0, i - 5); y < std::min(s.height, i + 6); y++) {
+        for (int x = std::max(0, j - 5); x < std::min(s.width, j + 6); x++) {
+          cnt++;
+          val += input.at<unsigned char>(y, x);
+        }
+      }
+      val /= cnt;
+      *ptr = (unsigned char)val;
+      ptr++;
+    }
+  }
 
-  
 #endif
 }
 
@@ -139,5 +155,29 @@ void convertEdge(cv::Mat &input, cv::Mat &processed) {
   processed = planes[0];
 
 #else
+
+  cv::Size s = input.size();
+  cv::Mat tmp, differ;
+  convertBlur(input, tmp);
+  differ.create(s, CV_8UC1);
+  
+  for (int i = 0; i < s.height; i++) {
+    unsigned char *ptr = differ.ptr<unsigned char>(i);
+    for (int j = 0; j < s.width; j++) {
+      int cnt = 0;
+      int val = 0;
+      for (int y = std::max(0, i - 1); y < std::min(s.height, i + 2); y++) {
+        for (int x = std::max(0, j - 1); x < std::min(s.width, j + 2); x++) {
+          if (y == i && x == j) continue;
+          cnt++;
+          val += tmp.at<unsigned char>(y, x);
+        }
+      }
+      *ptr = (unsigned char)(cnt * tmp.at<unsigned char>(i, j) - val);
+      ptr++;
+    }
+  }
+
+  processed = differ;
 #endif
 }
