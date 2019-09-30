@@ -3,42 +3,74 @@
 
 #define PAINT_MODE 0
 #define AREA_MODE 1
-int current_mode = PAINT_MODE
+int current_mode = PAINT_MODE;
 
 cv::Mat inpaint_mask;
-cv::Mat original_image, whiteLined_image, inpainted;
+cv::Mat original_image, whiteLined_image, select_base_image;
+
+cv::Point base;
+
+void initBasePos() {
+  base = cv::Point(-1, -1);
+}
 
 void myMouseEventHandler(int event, int x , int y , int flags, void *){
   if(whiteLined_image.empty()){
     return;
   }
 
-  
-  static bool isBrushDown = false;
-  static cv::Point prevPt;
-  cv::Point pt(x, y);
+  if (current_mode == PAINT_MODE) {
+    static bool isBrushDown = false;
+    static cv::Point prevPt;
+    cv::Point pt(x, y);
 
-  bool isLButtonPressedBeforeEvent = (bool)(flags & CV_EVENT_FLAG_LBUTTON);
-  if(isLButtonPressedBeforeEvent && isBrushDown){
-    cv::line(inpaint_mask, prevPt, pt, cv::Scalar(255), 5, 8, 0);
-    cv::line(whiteLined_image, prevPt, pt, cv::Scalar::all(255), 5, 8, 0);
-    cv::imshow("image", whiteLined_image);
+    bool isLButtonPressedBeforeEvent = (bool)(flags & CV_EVENT_FLAG_LBUTTON);
+    if(isLButtonPressedBeforeEvent && isBrushDown){
+      cv::line(inpaint_mask, prevPt, pt, cv::Scalar(255), 5, 8, 0);
+      cv::line(whiteLined_image, prevPt, pt, cv::Scalar::all(255), 5, 8, 0);
+      cv::imshow("image", whiteLined_image);
+    }
+
+    // The XOR below means, isLButtonPressedAfterEvent
+    // is usualy equal to isLButtonPressedBeforeEvent,
+    // but not equal if the event is mouse down or up.
+    bool isLButtonPressedAfterEvent = isLButtonPressedBeforeEvent
+      ^ ((event == CV_EVENT_LBUTTONDOWN) || (event == CV_EVENT_LBUTTONUP));
+    if(isLButtonPressedAfterEvent){
+      prevPt = pt;
+      isBrushDown = true;
+    }else{
+      isBrushDown = false;
+    }
   }
+  else if (current_mode == AREA_MODE) {
+    static bool isMouseDown = (base != cv::Point(-1, -1));
+    cv::Point pt(x, y);
 
-  // The XOR below means, isLButtonPressedAfterEvent
-  // is usualy equal to isLButtonPressedBeforeEvent,
-  // but not equal if the event is mouse down or up.
-  bool isLButtonPressedAfterEvent = isLButtonPressedBeforeEvent
-    ^ ((event == CV_EVENT_LBUTTONDOWN) || (event == CV_EVENT_LBUTTONUP));
-  if(isLButtonPressedAfterEvent){
-    prevPt = pt;
-    isBrushDown = true;
-  }else{
-    isBrushDown = false;
+    bool isLButtonPressedBeforeEvent = (bool)(flags & CV_EVENT_FLAG_LBUTTON);
+    if (isMouseDown && isLButtonPressedBeforeEvent) {
+      whiteLined_image = select_base_image.clone();
+      cv::line(whiteLined_image, base, cv::Point(base.x, y), cv::CV_RGB(255, 0, 0));
+      cv::line(whiteLined_image, cv::Point(base.x, y), pt, cv::CV_RGB(255, 0, 0));
+      cv::line(whiteLined_image, pt, cv::Point(x, base.y), cv::CV_RGB(255, 0, 0));
+      cv::line(whiteLined_image, cv::Point(x, base.y), base, cv::CV_RGB(255, 0, 0));
+      cv::imshow("image", whiteLined_image);
+    }
+
+    bool isLBut6tonPressedAfterEvent = isLButtonPressedBeforeEvent
+      ^ ((event == CV_EVENT_LBUTTONDOWN) || (event == CV_EVENT_LBUTTONUP));
+    if (isLbuttonPressedAfterEvent) {
+      if (base == cv::Point(-1, -1))  base = pt;
+      isMouseDown = true;
+    }
+    else {
+      isMouseDown = false;
+    }
   }
 }
 
 int main(int argc, char *argv[]){
+  initBasePos();
 
   // 1. read image file
   char *filename = (argc >= 2) ? argv[1] : (char *)"fruits.jpg";
@@ -51,7 +83,7 @@ int main(int argc, char *argv[]){
   //print hot keys
   printf( "Hot keys: \n"
       "\tESC - quit the program\n"
-      "\ts - change to select mode\n"
+      "\ts - change to area select mode\n"
       "\ti or ENTER - run inpainting algorithm\n"
       "\t\t(before running it, paint something on the image)\n");
 
@@ -93,7 +125,15 @@ int main(int argc, char *argv[]){
 
       case 's':
         // area select
-        
+        if (current_mode == PAINT_MODE) {
+          current_mode = AREA_MODE;
+          select_base_image = whiteLined_image.clone();
+        }
+        else if (current_mode == AREA_MODE) {
+          current_mode = PAINT_MODE;
+          initBasePos();
+        }
+        break;
 
       case 'i':
       case 10://ENTER
