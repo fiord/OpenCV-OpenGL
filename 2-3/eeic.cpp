@@ -16,7 +16,7 @@ void glut_keyboard(unsigned char key, int x, int y);
 void glut_mouse(int button, int state, int x, int y);
 void glut_motion(int x, int y);
 
-void draw_pyramid();
+void drawPlane();
 
 // グローバル変数
 double g_angle1 = 0.0;
@@ -132,16 +132,56 @@ void glut_display(){
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
 
-  glPushMatrix();
-  glRotatef(-30, 0, 0, 1);
-  glTranslatef(-1, 3, 0);
-  glColor3f(1, 1, 1);
-  glutWireTeapot(1);
-  glPopMatrix();
+  glTranslatef(-3, -3, 0);
 
   glPushMatrix();
-  glTranslatef(0, -2, 0);
-  draw_pyramid();
+  glColor3f(1, 1, 1);
+
+  drawPlane();
+  glRotatef(-90, 0, 0, 1);
+  glScalef(1, 0.75, 1);
+  drawPlane();
+  glTranslatef(-2.5, 0, 0);
+  drawPlane();
+  glTranslatef(-2.5, 0, 0);
+  drawPlane();
+
+  glPopMatrix();
+  glTranslatef(5, 0, 0); 
+  glPushMatrix();
+
+  drawPlane();
+  glRotatef(-90, 0, 0, 1);
+  glScalef(1, 0.75, 1);
+  drawPlane();
+  glTranslatef(-2.5, 0, 0);
+  drawPlane();
+  glTranslatef(-2.5, 0, 0);
+  drawPlane();
+
+  glPopMatrix();
+  glTranslatef(6, 0, 0);
+  glPushMatrix();
+
+  drawPlane();
+  glRotatef(-90, 0, 0, 1);
+  glTranslatef(0, -0.75, 0);
+  glScalef(1, 0.5, 1);
+  drawPlane();
+  glTranslatef(-5, 0, 0);
+  drawPlane();
+
+  glPopMatrix();
+  glTranslatef(3, 0, 0);
+  glPushMatrix();
+
+  drawPlane();
+  glRotatef(-90, 0, 0, 1);
+  glScalef(1, 0.75, 1);
+  drawPlane();
+  glTranslatef(-5, 0, 0);
+  drawPlane();
+
   glPopMatrix();
 
 	glFlush();
@@ -150,47 +190,33 @@ void glut_display(){
 	glutSwapBuffers();
 }
 
+void drawPlane() {
+  GLdouble points[8][3] = {
+    {0, 0, 0},
+    {1, 0, 0},
+    {1, 5, 0},
+    {0, 5, 0},
+    {0, 5, 1},
+    {0, 0, 1},
+    {1, 0, 1},
+    {1, 5, 1},
+  };
+  int surfaces[6][4] = {
+    {0, 1, 2, 3},
+    {0, 1, 6, 5},
+    {1, 2, 7, 6},
+    {2, 3, 4, 7},
+    {3, 0, 5, 4},
+    {4, 5, 6, 7}
+  };
 
-void draw_pyramid(){
-	GLdouble pointO[] = {0.0, 1.0, 0.0};
-	GLdouble pointA[] = {1.5, -1.0, 1.5};
-	GLdouble pointB[] = {-1.5, -1.0, 1.5};
-	GLdouble pointC[] = {-1.5, -1.0, -1.5};
-	GLdouble pointD[] = {1.5, -1.0, -1.5};
-
-	glColor3d(1.0, 0.0, 0.0);
-	glBegin(GL_TRIANGLES);
-	glVertex3dv(pointO);
-	glVertex3dv(pointA);
-	glVertex3dv(pointB);
-	glEnd();
-
-	glColor3d(1.0, 1.0, 0.0);
-	glBegin(GL_TRIANGLES);
-	glVertex3dv(pointO);
-	glVertex3dv(pointB);
-	glVertex3dv(pointC);
-	glEnd();
-
-	glColor3d(0.0, 1.0, 1.0);
-	glBegin(GL_TRIANGLES);
-	glVertex3dv(pointO);
-	glVertex3dv(pointC);
-	glVertex3dv(pointD);
-	glEnd();
-
-	glColor3d(1.0, 0.0, 1.0);
-	glBegin(GL_TRIANGLES);
-	glVertex3dv(pointO);
-	glVertex3dv(pointD);
-	glVertex3dv(pointA);
-	glEnd();
-
-	glColor3d(1.0, 1.0, 1.0);
-	glBegin(GL_POLYGON);
-	glVertex3dv(pointA);
-	glVertex3dv(pointB);
-	glVertex3dv(pointC);
-	glVertex3dv(pointD);
-	glEnd();
+  for (int i = 0; i < 6; i++) {
+    int color = i + 1;
+    glColor3d(color & 1, color & 2, color & 4);
+    glBegin(GL_POLYGON);
+    for(int j = 0; j < 4; j++) {
+      glVertex3dv(points[surfaces[i][j]]);
+    }
+    glEnd();
+  }
 }
