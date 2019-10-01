@@ -48,10 +48,10 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/denjo/Downloads/OpenCV-OpenGL/1-2
+CMAKE_SOURCE_DIR = /home/denjo/Downloads/OpenCV-OpenGL/1-3
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/denjo/Downloads/OpenCV-OpenGL/1-2
+CMAKE_BINARY_DIR = /home/denjo/Downloads/OpenCV-OpenGL/1-3
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -80,9 +80,9 @@ edit_cache/fast: edit_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/denjo/Downloads/OpenCV-OpenGL/1-2/CMakeFiles /home/denjo/Downloads/OpenCV-OpenGL/1-2/CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/denjo/Downloads/OpenCV-OpenGL/1-3/CMakeFiles /home/denjo/Downloads/OpenCV-OpenGL/1-3/CMakeFiles/progress.marks
 	$(MAKE) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/denjo/Downloads/OpenCV-OpenGL/1-2/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/denjo/Downloads/OpenCV-OpenGL/1-3/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -111,44 +111,44 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named test2
+# Target rules for targets named test3
 
 # Build rule for target.
-test2: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 test2
-.PHONY : test2
+test3: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 test3
+.PHONY : test3
 
 # fast build rule for target.
-test2/fast:
-	$(MAKE) -f CMakeFiles/test2.dir/build.make CMakeFiles/test2.dir/build
-.PHONY : test2/fast
+test3/fast:
+	$(MAKE) -f CMakeFiles/test3.dir/build.make CMakeFiles/test3.dir/build
+.PHONY : test3/fast
 
-test2.o: test2.cpp.o
+test3.o: test3.cpp.o
 
-.PHONY : test2.o
+.PHONY : test3.o
 
 # target to build an object file
-test2.cpp.o:
-	$(MAKE) -f CMakeFiles/test2.dir/build.make CMakeFiles/test2.dir/test2.cpp.o
-.PHONY : test2.cpp.o
+test3.cpp.o:
+	$(MAKE) -f CMakeFiles/test3.dir/build.make CMakeFiles/test3.dir/test3.cpp.o
+.PHONY : test3.cpp.o
 
-test2.i: test2.cpp.i
+test3.i: test3.cpp.i
 
-.PHONY : test2.i
+.PHONY : test3.i
 
 # target to preprocess a source file
-test2.cpp.i:
-	$(MAKE) -f CMakeFiles/test2.dir/build.make CMakeFiles/test2.dir/test2.cpp.i
-.PHONY : test2.cpp.i
+test3.cpp.i:
+	$(MAKE) -f CMakeFiles/test3.dir/build.make CMakeFiles/test3.dir/test3.cpp.i
+.PHONY : test3.cpp.i
 
-test2.s: test2.cpp.s
+test3.s: test3.cpp.s
 
-.PHONY : test2.s
+.PHONY : test3.s
 
 # target to generate assembly for a file
-test2.cpp.s:
-	$(MAKE) -f CMakeFiles/test2.dir/build.make CMakeFiles/test2.dir/test2.cpp.s
-.PHONY : test2.cpp.s
+test3.cpp.s:
+	$(MAKE) -f CMakeFiles/test3.dir/build.make CMakeFiles/test3.dir/test3.cpp.s
+.PHONY : test3.cpp.s
 
 # Help Target
 help:
@@ -157,11 +157,11 @@ help:
 	@echo "... clean"
 	@echo "... depend"
 	@echo "... rebuild_cache"
-	@echo "... test2"
+	@echo "... test3"
 	@echo "... edit_cache"
-	@echo "... test2.o"
-	@echo "... test2.i"
-	@echo "... test2.s"
+	@echo "... test3.o"
+	@echo "... test3.i"
+	@echo "... test3.s"
 .PHONY : help
 
 

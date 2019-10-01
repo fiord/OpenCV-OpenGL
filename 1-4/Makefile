@@ -48,10 +48,10 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/denjo/Downloads/OpenCV-OpenGL/1-2
+CMAKE_SOURCE_DIR = /home/denjo/Downloads/OpenCV-OpenGL/1-4
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/denjo/Downloads/OpenCV-OpenGL/1-2
+CMAKE_BINARY_DIR = /home/denjo/Downloads/OpenCV-OpenGL/1-4
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -80,9 +80,9 @@ edit_cache/fast: edit_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/denjo/Downloads/OpenCV-OpenGL/1-2/CMakeFiles /home/denjo/Downloads/OpenCV-OpenGL/1-2/CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/denjo/Downloads/OpenCV-OpenGL/1-4/CMakeFiles /home/denjo/Downloads/OpenCV-OpenGL/1-4/CMakeFiles/progress.marks
 	$(MAKE) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/denjo/Downloads/OpenCV-OpenGL/1-2/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/denjo/Downloads/OpenCV-OpenGL/1-4/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -111,44 +111,84 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named test2
+# Target rules for targets named test4
 
 # Build rule for target.
-test2: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 test2
-.PHONY : test2
+test4: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 test4
+.PHONY : test4
 
 # fast build rule for target.
-test2/fast:
-	$(MAKE) -f CMakeFiles/test2.dir/build.make CMakeFiles/test2.dir/build
-.PHONY : test2/fast
+test4/fast:
+	$(MAKE) -f CMakeFiles/test4.dir/build.make CMakeFiles/test4.dir/build
+.PHONY : test4/fast
 
-test2.o: test2.cpp.o
+#=============================================================================
+# Target rules for targets named test4-2
 
-.PHONY : test2.o
+# Build rule for target.
+test4-2: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 test4-2
+.PHONY : test4-2
+
+# fast build rule for target.
+test4-2/fast:
+	$(MAKE) -f CMakeFiles/test4-2.dir/build.make CMakeFiles/test4-2.dir/build
+.PHONY : test4-2/fast
+
+test4-2.o: test4-2.cpp.o
+
+.PHONY : test4-2.o
 
 # target to build an object file
-test2.cpp.o:
-	$(MAKE) -f CMakeFiles/test2.dir/build.make CMakeFiles/test2.dir/test2.cpp.o
-.PHONY : test2.cpp.o
+test4-2.cpp.o:
+	$(MAKE) -f CMakeFiles/test4-2.dir/build.make CMakeFiles/test4-2.dir/test4-2.cpp.o
+.PHONY : test4-2.cpp.o
 
-test2.i: test2.cpp.i
+test4-2.i: test4-2.cpp.i
 
-.PHONY : test2.i
+.PHONY : test4-2.i
 
 # target to preprocess a source file
-test2.cpp.i:
-	$(MAKE) -f CMakeFiles/test2.dir/build.make CMakeFiles/test2.dir/test2.cpp.i
-.PHONY : test2.cpp.i
+test4-2.cpp.i:
+	$(MAKE) -f CMakeFiles/test4-2.dir/build.make CMakeFiles/test4-2.dir/test4-2.cpp.i
+.PHONY : test4-2.cpp.i
 
-test2.s: test2.cpp.s
+test4-2.s: test4-2.cpp.s
 
-.PHONY : test2.s
+.PHONY : test4-2.s
 
 # target to generate assembly for a file
-test2.cpp.s:
-	$(MAKE) -f CMakeFiles/test2.dir/build.make CMakeFiles/test2.dir/test2.cpp.s
-.PHONY : test2.cpp.s
+test4-2.cpp.s:
+	$(MAKE) -f CMakeFiles/test4-2.dir/build.make CMakeFiles/test4-2.dir/test4-2.cpp.s
+.PHONY : test4-2.cpp.s
+
+test4.o: test4.cpp.o
+
+.PHONY : test4.o
+
+# target to build an object file
+test4.cpp.o:
+	$(MAKE) -f CMakeFiles/test4.dir/build.make CMakeFiles/test4.dir/test4.cpp.o
+.PHONY : test4.cpp.o
+
+test4.i: test4.cpp.i
+
+.PHONY : test4.i
+
+# target to preprocess a source file
+test4.cpp.i:
+	$(MAKE) -f CMakeFiles/test4.dir/build.make CMakeFiles/test4.dir/test4.cpp.i
+.PHONY : test4.cpp.i
+
+test4.s: test4.cpp.s
+
+.PHONY : test4.s
+
+# target to generate assembly for a file
+test4.cpp.s:
+	$(MAKE) -f CMakeFiles/test4.dir/build.make CMakeFiles/test4.dir/test4.cpp.s
+.PHONY : test4.cpp.s
 
 # Help Target
 help:
@@ -157,11 +197,15 @@ help:
 	@echo "... clean"
 	@echo "... depend"
 	@echo "... rebuild_cache"
-	@echo "... test2"
 	@echo "... edit_cache"
-	@echo "... test2.o"
-	@echo "... test2.i"
-	@echo "... test2.s"
+	@echo "... test4"
+	@echo "... test4-2"
+	@echo "... test4-2.o"
+	@echo "... test4-2.i"
+	@echo "... test4-2.s"
+	@echo "... test4.o"
+	@echo "... test4.i"
+	@echo "... test4.s"
 .PHONY : help
 
 

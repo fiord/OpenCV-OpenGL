@@ -1,17 +1,20 @@
 #include <opencv2/opencv.hpp>
 #include <stdio.h>
+#include <cmath>
+#include <algorithm>
 
 #define PAINT_MODE 0
 #define AREA_MODE 1
 int current_mode = PAINT_MODE;
 
-cv::Mat inpaint_mask;
+cv::Mat inpaint_mask, inpainted;
 cv::Mat original_image, whiteLined_image, select_base_image;
 
-cv::Point base;
+cv::Point base, base2;
 
 void initBasePos() {
   base = cv::Point(-1, -1);
+  base2 = cv::Point(-1, -1);
 }
 
 void myMouseEventHandler(int event, int x , int y , int flags, void *){
@@ -50,16 +53,20 @@ void myMouseEventHandler(int event, int x , int y , int flags, void *){
     bool isLButtonPressedBeforeEvent = (bool)(flags & CV_EVENT_FLAG_LBUTTON);
     if (isMouseDown && isLButtonPressedBeforeEvent) {
       whiteLined_image = select_base_image.clone();
-      cv::line(whiteLined_image, base, cv::Point(base.x, y), cv::CV_RGB(255, 0, 0));
-      cv::line(whiteLined_image, cv::Point(base.x, y), pt, cv::CV_RGB(255, 0, 0));
-      cv::line(whiteLined_image, pt, cv::Point(x, base.y), cv::CV_RGB(255, 0, 0));
-      cv::line(whiteLined_image, cv::Point(x, base.y), base, cv::CV_RGB(255, 0, 0));
+      base2 = pt;
+      cv::line(whiteLined_image, base, cv::Point(base.x, y), CV_RGB(255, 0, 0));
+      cv::line(whiteLined_image, cv::Point(base.x, y), pt, CV_RGB(255, 0, 0));
+      cv::line(whiteLined_image, pt, cv::Point(x, base.y), CV_RGB(255, 0, 0));
+      cv::line(whiteLined_image, cv::Point(x, base.y), base, CV_RGB(255, 0, 0));
       cv::imshow("image", whiteLined_image);
     }
 
-    bool isLBut6tonPressedAfterEvent = isLButtonPressedBeforeEvent
+    bool isLButtonPressedAfterEvent = isLButtonPressedBeforeEvent
       ^ ((event == CV_EVENT_LBUTTONDOWN) || (event == CV_EVENT_LBUTTONUP));
-    if (isLbuttonPressedAfterEvent) {
+    if (isLButtonPressedAfterEvent) {
+      if (!isMouseDown) {
+        base = base2 = cv::Point(-1, -1);
+      }
       if (base == cv::Point(-1, -1))  base = pt;
       isMouseDown = true;
     }
@@ -84,6 +91,7 @@ int main(int argc, char *argv[]){
   printf( "Hot keys: \n"
       "\tESC - quit the program\n"
       "\ts - change to area select mode\n"
+      "\tb - bitwise not in selected area(only in area select mode and area have been already selected\n"
       "\ti or ENTER - run inpainting algorithm\n"
       "\t\t(before running it, paint something on the image)\n");
 
@@ -131,7 +139,31 @@ int main(int argc, char *argv[]){
         }
         else if (current_mode == AREA_MODE) {
           current_mode = PAINT_MODE;
+          whiteLined_image = select_base_image.clone();
           initBasePos();
+        }
+        cv::imshow("image", whiteLined_image);
+        break;
+
+      case 'b':
+        // bitwise not
+        if (current_mode == AREA_MODE && base != cv::Point(-1, -1) && base2 != cv::Point(-1, -1)) {
+          printf("%d, %d\n", std::min(base.x, base2.x), std::max(base.x, base2.x));
+          for (int i = std::min(base.y, base2.y); i <= std::max(base.y, base2.y); i++) {
+            unsigned char *ptr1 = select_base_image.ptr<unsigned char>(i);
+            unsigned char *ptr2 = inpaint_mask.ptr<unsigned char>(i);
+            for (int j = std::min(base.x, base2.x); j <= std::max(base.x, base2.x); j++) {
+              for (int k = 0; k < 3; k++) {
+                unsigned char val = *(ptr1+3*j+k);
+                *(ptr1 + 3 * j + k) = ~val;
+                *(ptr2 + 3 * j + k) = ~val;
+              }
+            }
+          }
+          cv::imshow("image", select_base_image);
+        }
+        else {
+          printf("error\n");
         }
         break;
 
