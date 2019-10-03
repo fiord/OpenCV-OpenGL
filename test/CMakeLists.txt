@@ -1,0 +1,12 @@
+cmake_minimum_required(VERSION 2.8)
+project(test)
+set(CMAKE_CXX_STANDARD 14)
+add_executable(test
+  Main.cpp
+  Player.cpp
+)
+find_package(OpenGL REQUIRED)
+find_package(GLUT REQUIRED)
+find_package(OpenCV REQUIRED)
+include_directories(${OPENGL_INCLUDE_DIRS} ${GLUT_INCLUDE_DIRS})
+target_link_libraries(test ${OpenCV_LIBS} ${OPENGL_LIBRARIES} ${GLUT_LIBRARY})

@@ -66,6 +66,8 @@ void init() {
     printf("cannnot open the camera\n");
     exit(0);
   }
+  cv::namedWindow("camera", 1);
+  glut_idle();
 
   glClearColor(0.2, 0.2, 0.2, 0.2);
   glGenTextures(1, g_TextureHandles);
@@ -76,7 +78,6 @@ void init() {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-  glut_idle();
 }
 
 void set_callback_functions() {
@@ -173,6 +174,7 @@ void glut_display() {
 
 void glut_idle() {
   cap >> frame;
+  cv::imshow("camera", frame);
   // BGR -> RGB
   cv::cvtColor(frame, frame, CV_BGR2RGB);
 
