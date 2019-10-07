@@ -1,14 +1,18 @@
+#define DEBUG 0
 #include <iostream>
+// #include <GL/glew.h>
 #include <GL/glut.h>
 
 #include "Player.hpp"
 
-#define WINDOW_X (720)
-#define WINDOW_Y (720)
+#define WINDOW_X (1080)
+#define WINDOW_Y (1080)
 #define WINDOW_NAME "test"
 
 void init_GL(int, char**);
 void init();
+// int readShaderSource(GLuint shader, const char *file);
+// void printShaderInfoLog(GLuint shader);
 void set_callback_functions();
 
 void glut_display();
@@ -20,6 +24,9 @@ void glut_idle();
 
 void create_room();
 
+static GLuint vertShader;
+static GLuint fragShader;
+static GLuint gl2Program;
 bool g_isLeftButtonOn = false;
 bool g_isRightButtonOn = false;
 Player *mainPlayer;
@@ -42,16 +49,105 @@ int main(int argc, char *argv[]) {
 }
 
 void init_GL(int argc, char *argv[]) {
+  //if (!glewInit()) {
+  //   std::cerr << "failed in gl initialization" << std::endl;
+  // }
   glutInit(&argc, argv);
   glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE);
   glutInitWindowSize(WINDOW_X, WINDOW_Y);
   glutCreateWindow(WINDOW_NAME);
+  // glutFullScreen();
+  
+  // shader
+#if DEBUG
+  GLint compiled, linked;
+  vertShader = glCreateShader(GL_VERTEX_SHADER);
+  fragShader = glCreateShader(GL_FRAGMENT_SHADER);
+  if (readShaderSource(vertShader, "simple.vert")) exit(1);
+  if (readShaderSource(fragShader, "simple.frag")) exit(1);
+  glCompileShader(vertShader);
+  glGetShaderiv(vertShader, GL_COMPILE_STATUS, &compiled);
+  glGetShaderInfoLog(vertShader);
+  if (compiled == GL_FALSE) {
+    fprintf(stderr, "compile error in vertex shader\n");
+    exit(1);
+  }
+  glCompileShader(fragShader);
+  glGetShaderiv(fragShader, GL_COMPILE_STATUS, &compiled);
+  printShaderInfoLog(fragShader);
+  if  (compiled == GL_FALSE) {
+    fprintf(stderr, "compile error in fragment shader");
+    exit(1);
+  }
+  gl2Program = glCreateProgram();
+  glAttachShader(gl2Program, vertShader);
+  glAttachShader(gl2Program, fragShader);
+  glDeleteShader(vertShader);
+  glDeleteShader(fragShader);
+  glLinkProgram(gl2Program);
+  glGetProgramiv(gl2Program, GL_LINK_STATUS, &linked);
+  glGetProgramInfoLog(gl2Program);
+  if (linked == GL_FALSE) {
+    fprintf(stderr, "link error\n");
+    exit(1);
+  }
+  glUseProgram(gl2Program);
+#endif
 }
 
 void init() {
   glClearColor(0.2, 0.2, 0.2, 0.2);
   mainPlayer = new Player();
 }
+
+/*
+void printShaderInfoLog(GLuint shader) {
+  int logSize;
+  int length;
+  GLchar *s_LogBuffer;
+  glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &logSize);
+
+  if (logSize > 1) {
+    glGetShaderInfoLog(shader, MAX_SHADER_LOG_SIZE, &length, s_LogBuffer);
+    fprintf(stderr, "shader infolog\n%s\n", s_LogBuffer);
+}
+*/
+
+/*
+int readShaderSource(GLuint shader, const char *file) {
+  FILE *fp;
+  const GLchar *source;
+  GLsizei length;
+  int ret;
+
+  fp = fopen(file, "rb");
+  if (fp == NULL) {
+    std::cerr << "failed to open " << file << std::endl;
+    exit(1);
+  }
+  
+  fseek(fp, 0, SEEK_END);
+  length = ftell(fp);
+
+  source = (GLchar*)malloc(length);
+  if (source == NULL) {
+    std::cerr << "failed to allocate read buffer" << std::endl;
+  }
+
+  fseek(fp, 0, SEEK_SET);
+  ret = fread((void*)source, 1, length, fp) != (size_t)length;
+  fclose(fp);
+
+  if (ret) {
+    std::cerr << "failed to read file: " << file << std::endl;
+    exit(1);
+  }
+  glShaderSource(shader, 1, &source, &length);
+
+  free((void*)source);
+  return ret;
+}
+*/
 
 void set_callback_functions() {
   glutDisplayFunc(glut_display);
@@ -71,7 +167,7 @@ void glut_keyboard(unsigned char key, int x, int y) {
       exit(0);
     case 'a':
     case 'A':
-      mainPlayer->changeVerocity(-sin(mainPlayer->angle_2), 0, cos(mainPlayer->angle_2));
+      mainPlayer->changeVerocity(sin(mainPlayer->angle_2), 0, -cos(mainPlayer->angle_2));
       break;
     case 'w':
     case 'W':
@@ -83,7 +179,10 @@ void glut_keyboard(unsigned char key, int x, int y) {
       break;
     case 'd':
     case 'D':
-      mainPlayer->changeVerocity(sin(mainPlayer->angle_2), 0, -cos(mainPlayer->angle_2));
+      mainPlayer->changeVerocity(-sin(mainPlayer->angle_2), 0, cos(mainPlayer->angle_2));
+      break;
+    case ' ':
+      mainPlayer->changeVerocity(0, 0.5, 0);
       break;
   }
 
