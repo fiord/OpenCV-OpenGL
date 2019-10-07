@@ -27,8 +27,9 @@ void Player::getTarget(double &x, double &y, double &z) {
 
 // Playerの視線移動を行う（マウス操作）
 void Player::moveGaze(int dx, int dy) {
- this->angle_1 += dy / 200.0;
- this->angle_2 -= dx / 200.0;
+ this->angle_1 -= dy / 300.0;
+ this->angle_2 -= dx / 300.0;
+ this->angle_1 = std::max(0.0, std::min(M_PI, this->angle_1));
 }
 
 // Playerの速度変更を行う（AWSD操作と重力）

@@ -1,5 +1,6 @@
 #ifndef PLAYER_INCLUDED
 #include <cmath>
+#include <algorithm>
 #define PLAYER_INCLUDED
 
 class Player {

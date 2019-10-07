@@ -147,19 +147,21 @@ void glut_display() {
 
   GLfloat lightpos[] = {-9.0f, 9.0f, -9.0f, 1.0f};
   GLfloat diffuse[] = {1, 1, 1, 1};
-  GLfloat ambient[] = {0.2, 0.2, 0.2, 0.2};
+  GLfloat ambient[] = {1, 1, 1, 1};
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glEnable(GL_DEPTH_TEST);
+
+  glEnable(GL_LIGHTING);
   glEnable(GL_LIGHT0);
   glEnable(GL_LIGHT1);
 
   glLightfv(GL_LIGHT0, GL_POSITION, lightpos);
   glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse);
-  // glLightfv(GL_LIGHT1, GL_AMBIENT, ambient);
+  glLightfv(GL_LIGHT1, GL_AMBIENT, ambient);
 
   glPushMatrix();
-  glRotatef(rotate_cnt / 5.0, 0, 1, 0);
+
   static GLdouble points[6][3] = {
     {0, 2, 0},
     {1, 1, 0},
@@ -179,6 +181,7 @@ void glut_display() {
     {4, 1, 5}
   };
 
+  double rotated = rotate_cnt / 500.0;
   glColor3d(1, 0, 0);
   for (int i = 0; i < 8; i++) {
     if (i % 4 == 0) glColor3d(1, 0, 0);
@@ -187,8 +190,24 @@ void glut_display() {
     else if (i % 4 == 3)  glColor3d(1, 1, 0);
 
     glBegin(GL_POLYGON);
+    GLdouble g_pos[3] = {
+      (points[surfaces[i][0]][0] + points[surfaces[i][1]][0] + points[surfaces[i][2]][0]) / 3.0,
+      (points[surfaces[i][0]][1] + points[surfaces[i][1]][1] + points[surfaces[i][2]][1]) / 3.0 - 1.0,
+      (points[surfaces[i][0]][2] + points[surfaces[i][1]][2] + points[surfaces[i][2]][2]) / 3.0
+    };
+    GLdouble normal[3] = {
+      g_pos[0] * cos(rotated) - g_pos[2] * sin(rotated),
+      g_pos[1],
+      g_pos[2] * cos(rotated) + g_pos[0] * sin(rotated)
+    };
+    glNormal3dv(normal);
     for (int j = 0; j < 3; j++) {
-      glVertex3dv(points[surfaces[i][j]]);
+      GLdouble point[3] = {
+        points[surfaces[i][j]][0] * cos(rotated) - points[surfaces[i][j]][2] * sin(rotated),
+        points[surfaces[i][j]][1],
+        points[surfaces[i][j]][2] * cos(rotated) + points[surfaces[i][j]][0] * sin(rotated)
+      };
+      glVertex3dv(point);
     }
     glEnd();
   }
@@ -201,6 +220,7 @@ void glut_display() {
 
   glDisable(GL_LIGHT0);
   glDisable(GL_LIGHT1);
+  glDisable(GL_LIGHTING);
   glDisable(GL_DEPTH_TEST);
 
   glutSwapBuffers();
@@ -227,9 +247,19 @@ void create_room() {
     {4, 5, 6, 7}
   };
 
+  GLdouble normals[6][3] = {
+    {0, 1, 0},
+    {0, 0, 1},
+    {1, 0, 0},
+    {0, 0, -1},
+    {-1, 0, 0},
+    {0, -1, 0} 
+  };
+
   glColor3d(1, 1, 1);
   for (int i = 0; i < 6;  i++) {
     glBegin(GL_POLYGON);
+    glNormal3dv(normals[i]);
     for (int j = 0; j < 4; j++) {
       glVertex3dv(points[surfaces[i][j]]);
     }
