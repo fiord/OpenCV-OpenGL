@@ -1,6 +1,6 @@
-#define DEBUG 0
+#define DEBUG 1
 #include <iostream>
-// #include <GL/glew.h>
+#include <GL/glew.h>
 #include <GL/glut.h>
 
 #include "Player.hpp"
@@ -11,8 +11,9 @@
 
 void init_GL(int, char**);
 void init();
-// int readShaderSource(GLuint shader, const char *file);
-// void printShaderInfoLog(GLuint shader);
+int readShaderSource(GLuint shader, const char *file);
+void printShaderInfoLog(GLuint shader);
+void printProgramInfoLog(GLuint program);
 void set_callback_functions();
 
 void glut_display();
@@ -24,9 +25,11 @@ void glut_idle();
 
 void create_room();
 
+#define MAX_SHADER_LOG_SIZE (1024)
 static GLuint vertShader;
 static GLuint fragShader;
 static GLuint gl2Program;
+
 bool g_isLeftButtonOn = false;
 bool g_isRightButtonOn = false;
 Player *mainPlayer;
@@ -49,25 +52,31 @@ int main(int argc, char *argv[]) {
 }
 
 void init_GL(int argc, char *argv[]) {
-  //if (!glewInit()) {
-  //   std::cerr << "failed in gl initialization" << std::endl;
-  // }
   glutInit(&argc, argv);
   glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE);
   glutInitWindowSize(WINDOW_X, WINDOW_Y);
   glutCreateWindow(WINDOW_NAME);
   // glutFullScreen();
   
+  GLenum err = glewInit();
+  if (err) {
+    std::cerr << "failed in gl initialization" << std::endl;
+    std::cerr << err << std::endl;
+    std::cerr << glewGetErrorString(err) << std::endl;
+    exit(1);
+  }
+  std::cerr << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
   // shader
 #if DEBUG
   GLint compiled, linked;
   vertShader = glCreateShader(GL_VERTEX_SHADER);
   fragShader = glCreateShader(GL_FRAGMENT_SHADER);
-  if (readShaderSource(vertShader, "simple.vert")) exit(1);
-  if (readShaderSource(fragShader, "simple.frag")) exit(1);
+  if (readShaderSource(vertShader, "vert.c")) exit(1);
+  if (readShaderSource(fragShader, "frag.c")) exit(1);
   glCompileShader(vertShader);
   glGetShaderiv(vertShader, GL_COMPILE_STATUS, &compiled);
-  glGetShaderInfoLog(vertShader);
+  std::cout << "OK" << std::endl;
+  printShaderInfoLog(vertShader);
   if (compiled == GL_FALSE) {
     fprintf(stderr, "compile error in vertex shader\n");
     exit(1);
@@ -86,7 +95,7 @@ void init_GL(int argc, char *argv[]) {
   glDeleteShader(fragShader);
   glLinkProgram(gl2Program);
   glGetProgramiv(gl2Program, GL_LINK_STATUS, &linked);
-  glGetProgramInfoLog(gl2Program);
+  printProgramInfoLog(gl2Program);
   if (linked == GL_FALSE) {
     fprintf(stderr, "link error\n");
     exit(1);
@@ -100,7 +109,6 @@ void init() {
   mainPlayer = new Player();
 }
 
-/*
 void printShaderInfoLog(GLuint shader) {
   int logSize;
   int length;
@@ -110,10 +118,26 @@ void printShaderInfoLog(GLuint shader) {
   if (logSize > 1) {
     glGetShaderInfoLog(shader, MAX_SHADER_LOG_SIZE, &length, s_LogBuffer);
     fprintf(stderr, "shader infolog\n%s\n", s_LogBuffer);
+  }
 }
-*/
 
-/*
+void printProgramInfoLog(GLuint program) {
+  GLsizei bufSize;
+  glGetProgramiv(program, GL_INFO_LOG_LENGTH, &bufSize);
+  if (bufSize > 1) {
+    GLchar *infoLog = (GLchar*) malloc(bufSize);
+    if (infoLog == NULL) {
+      std::cerr << "could not allocate infolog buffer\n" << std::endl;
+    }
+    else {
+      GLsizei length;
+      glGetProgramInfoLog(program, bufSize, &length, infoLog);
+      fprintf(stderr, "infolog: \n%s\n", infoLog);
+      free(infoLog);
+    }
+  }
+}
+
 int readShaderSource(GLuint shader, const char *file) {
   FILE *fp;
   const GLchar *source;
@@ -147,7 +171,6 @@ int readShaderSource(GLuint shader, const char *file) {
   free((void*)source);
   return ret;
 }
-*/
 
 void set_callback_functions() {
   glutDisplayFunc(glut_display);
@@ -241,16 +264,19 @@ void glut_display() {
   double target_x, target_y, target_z;
   mainPlayer->getTarget(target_x, target_y, target_z);
   gluLookAt(mainPlayer->pos_x, mainPlayer->pos_y, mainPlayer->pos_z,
-      target_x, target_y, target_z,
+      0.0, 0.0, 0.0,
       0.0, 1.0, 0.0);
 
+  /*
   GLfloat lightpos[] = {-9.0f, 9.0f, -9.0f, 1.0f};
   GLfloat diffuse[] = {1, 1, 1, 1};
   GLfloat ambient[] = {1, 1, 1, 1};
+  */
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glEnable(GL_DEPTH_TEST);
 
+  /*
   glEnable(GL_LIGHTING);
   glEnable(GL_LIGHT0);
   glEnable(GL_LIGHT1);
@@ -258,8 +284,10 @@ void glut_display() {
   glLightfv(GL_LIGHT0, GL_POSITION, lightpos);
   glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse);
   glLightfv(GL_LIGHT1, GL_AMBIENT, ambient);
+  */
 
   glPushMatrix();
+
 
   static GLdouble points[6][3] = {
     {0, 2, 0},
@@ -317,9 +345,11 @@ void glut_display() {
 
   glFlush();
 
+  /*
   glDisable(GL_LIGHT0);
   glDisable(GL_LIGHT1);
   glDisable(GL_LIGHTING);
+  */
   glDisable(GL_DEPTH_TEST);
 
   glutSwapBuffers();
