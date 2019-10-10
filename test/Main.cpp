@@ -275,6 +275,7 @@ void glut_display() {
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glEnable(GL_DEPTH_TEST);
+  glEnable(GL_CULL_FACE);
 
   /*
   glEnable(GL_LIGHTING);
@@ -350,6 +351,7 @@ void glut_display() {
   glDisable(GL_LIGHT1);
   glDisable(GL_LIGHTING);
   */
+  glDisable(GL_CULL_FACE);
   glDisable(GL_DEPTH_TEST);
 
   glutSwapBuffers();
