@@ -4,9 +4,10 @@
 #include <GL/glut.h>
 
 #include "Player.hpp"
+#include "Mesh.hpp"
 
-#define WINDOW_X (1080)
-#define WINDOW_Y (1080)
+#define WINDOW_X (500)
+#define WINDOW_Y (500)
 #define WINDOW_NAME "test"
 
 void init_GL(int, char**);

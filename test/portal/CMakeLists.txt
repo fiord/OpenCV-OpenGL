@@ -7,7 +7,6 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_COLOR_MAKEFILE ON) 
 add_executable(test
   Main.cpp
-  Player.cpp
 )
 find_package(OpenGL REQUIRED)
 find_package(GLUT REQUIRED)
@@ -15,4 +14,4 @@ find_package(GLEW REQUIRED)
 find_package(OpenCV REQUIRED)
 include_directories(${OPENGL_INCLUDE_DIRS} ${GLUT_INCLUDE_DIRS})
 include_directories(${GLEW_INCLUDE_DIRS})
-target_link_libraries(test ${OpenCV_LIBS} ${OPENGL_LIBRARIES} ${GLUT_LIBRARY} ${GLEW_LIBRARIES})
+target_link_libraries(test ${OpenCV_LIBS} ${OPENGL_LIBRARIES} ${GLUT_LIBRARY} ${GLEW_LIBRARIES} m)
