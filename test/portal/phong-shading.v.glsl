@@ -4,13 +4,16 @@
  */
 attribute vec4 v_coord;
 attribute vec3 v_normal;
+attribute vec4 v_color;
 varying vec4 position;  // position of the vertex (and fragment) in world space
 varying vec3 varyingNormalDirection;  // surface normal vector in world space
+varying vec4 outColor;  // object color
 uniform mat4 m, v, p;
 uniform mat3 m_3x3_inv_transp;
 
 void main()
 {
+  outColor = gl_Color;
   position = m * v_coord;
   varyingNormalDirection = normalize(m_3x3_inv_transp * v_normal);
 

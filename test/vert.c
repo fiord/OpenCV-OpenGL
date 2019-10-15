@@ -7,5 +7,5 @@ varying vec4 out_color;
 
 void main(void) {
   gl_Position = gl_Vertex;
-  out_color = gl_Color;;
+  out_color = gl_Color;
 }

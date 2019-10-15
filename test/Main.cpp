@@ -4,7 +4,6 @@
 #include <GL/glut.h>
 
 #include "Player.hpp"
-#include "Mesh.hpp"
 
 #define WINDOW_X (500)
 #define WINDOW_Y (500)

@@ -4,6 +4,7 @@
  */
 varying vec4 position;  // position of the vertex (and fragment) in world space
 varying vec3 varyingNormalDirection;  // surface normal vector in world space
+varying vec4 outColor;  // object color
 uniform mat4 m, v, p;
 uniform mat4 v_inv;
 
@@ -17,14 +18,14 @@ struct lightSource
   vec3 spotDirection;
 };
 lightSource light0 = lightSource(
-  vec4(0.0,  3.0,  0.0, 1.0),
+  vec4(0.0,  10.0,  0.0, 1.0),
   vec4(1.0,  1.0,  1.0, 1.0),
   vec4(1.0,  1.0,  1.0, 1.0),
   2.0,
   180.0, 0.0,
   vec3(0.0, 0.0, 0.0)
 );
-vec4 scene_ambient = vec4(0.2, 0.2, 0.2, 1.0);
+vec4 scene_ambient = vec4(1.0, 1.0, 1.0, 1.0);
 
 struct material
 {
@@ -42,6 +43,7 @@ material frontMaterial = material(
 
 void main()
 {
+  frontMaterial.diffuse = outColor;
   vec3 normalDirection = normalize(varyingNormalDirection);
   vec3 viewDirection = normalize(vec3(v_inv * vec4(0.0, 0.0, 0.0, 1.0) - position));
   vec3 lightDirection;
