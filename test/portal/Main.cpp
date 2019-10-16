@@ -1,9 +1,11 @@
 #define DEBUG 0
+bool debug = false;
 #include <cmath>
 #include <unistd.h>
 #include <iostream>
 #include <algorithm>
 #include <vector>
+#include <utility>
 #include <GL/glew.h>
 #include <GL/glut.h>
 #include <glm/glm.hpp>
@@ -58,9 +60,6 @@ void draw();
 
 int screen_width = WINDOW_X, screen_height = WINDOW_Y;
 GLuint program;
-bool compute_arcball;
-int last_mx = 0, last_my = 0, cur_mx = 0, cur_my = 0;
-int arcball_on = false;
 
 enum MODES { MODE_OBJECT, MODE_CAMERA, MODE_LIGHT, MODE_LAST };
 MODES view_mode = MODE_CAMERA;
@@ -143,23 +142,9 @@ void init_GL(int argc, char *argv[]) {
 
 bool init_function(char *model_filename, char *vshader_filename, char *fshader_filename) {
   mainPlayer = new Player();
-
-  load_obj(model_filename, &main_object);
-  // mesh position initialized in init_view
-
+  
   // world settings from portalX.hpp
   world_init();
-
-  glm::vec3 light_position = glm::vec3(0.0, 1.0, 2.0);
-  light_bbox.vertices.push_back(glm::vec4(-0.1, -0.1, -0.1, 0.0));
-  light_bbox.vertices.push_back(glm::vec4( 0.1, -0.1, -0.1, 0.0));
-  light_bbox.vertices.push_back(glm::vec4( 0.1,  0.1, -0.1, 0.0));
-  light_bbox.vertices.push_back(glm::vec4(-0.1,  0.1, -0.1, 0.0));
-  light_bbox.vertices.push_back(glm::vec4(-0.1, -0.1,  0.1, 0.0));
-  light_bbox.vertices.push_back(glm::vec4( 0.1, -0.1,  0.1, 0.0));
-  light_bbox.vertices.push_back(glm::vec4( 0.1,  0.1,  0.1, 0.0));
-  light_bbox.vertices.push_back(glm::vec4(-0.1,  0.1,  0.1, 0.0));
-  light_bbox.object2world = glm::translate(glm::mat4(1), light_position);
 
   for (int i = 0 ; i < 2; i++)  portals[i] = std::vector<Mesh>(NUM_PORTAL);
   for (int i = 0; i < portals[0].size(); i++) {
@@ -173,7 +158,9 @@ bool init_function(char *model_filename, char *vshader_filename, char *fshader_f
     portals[1][i].upload();
   }
 
-  main_object.upload();
+  for (int i = 0; i < main_object.size(); i++) {
+    main_object[i].upload();
+  }
   for (int i = 0; i < ground.size(); i++) {
     ground[i].upload();
   }
@@ -255,7 +242,6 @@ bool init_function(char *model_filename, char *vshader_filename, char *fshader_f
 }
 
 void init_view() {
-  main_object.object2world = glm::translate(glm::mat4(1), glm::vec3(-2, 1, 0)) * glm::rotate(glm::mat4(1), glm::radians(90.0f), glm::vec3(0, 1, 0));
   transforms[MODE_CAMERA] = glm::lookAt(
       glm::vec3(0.0, 1.0, 6.0), // eye
       glm::vec3(0.0, 1.0, 0.0), // direction
@@ -323,6 +309,9 @@ void glut_special(int key, int x, int y) {
     case GLUT_KEY_F3:
       view_mode = MODE_LIGHT;
       break;
+    case GLUT_KEY_F4:
+      debug ^= true;
+      break;
     case GLUT_KEY_LEFT:
       rotY_direction = 1;
       // mainPlayer->changeVerocity(-1.0, 0, 0);
@@ -365,14 +354,7 @@ void glut_specialup(int key, int x, int y) {
 }
 
 void glut_mouse(int button, int state, int x, int y) {
-  if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
-    arcball_on = true;
-    last_mx = cur_mx = x;
-    last_my = cur_my = y;
-  }
-  else {
-    arcball_on = false;
-  }
+  // nothing to do
 }
 
 void glut_motion(int x, int y) {
@@ -386,10 +368,6 @@ void glut_motion(int x, int y) {
 
   glutPostRedisplay();
   */
-  if (arcball_on) {
-    cur_mx = x;
-    cur_my = y;
-  }
 }
 
 void glut_reshape(int width, int height) {
@@ -483,26 +461,6 @@ glm::mat4 portal_view (glm::mat4 orig_view, Mesh* src, Mesh* dst) {
   return portal_cam;
 }
 
-// get a normalized vector from the center of the virtual ball O to a point P on the virtual ball surface, such that P is aligned on screen's (x, y) coordinates.
-// if (x, y) is too far away from the sphere, return the nearest point on the virtual ball surface.
-glm::vec3 get_arcball_vector(int x, int y) {
-  glm::vec3 P = glm::vec3(
-      1.0 * x / screen_width * 2.0 - 1.0,
-      1.0 * y / screen_height * 2.0 - 1.0,
-      0.0
-  );
-  P.y = -P.y;
-  float OP_squared = P.x * P.x + P.y * P.y;
-  if (OP_squared <= 1.0 * 1.0) {
-    P.z = sqrt(1.0 * 1.0 - OP_squared);
-  }
-  else {
-    P = glm::normalize(P);
-  }
-
-  return P;
-}
-
 // checks whether the line defined by two points la and lb intersects the portal
 int portal_intersection(glm::vec4 la, glm::vec4 lb, Mesh* portal) {
   if (la != lb) { // if camera moved
@@ -564,12 +522,7 @@ void logic() {
     delta_rotX = rotX_direction * delta_t / 1000.0 * 120 * speed_factor; // 120°per second
   }
 
-  if (view_mode == MODE_OBJECT) {
-    main_object.object2world = glm::rotate(main_object.object2world, glm::radians(delta_rotY), glm::vec3(0.0, 1.0, 0.0));
-    main_object.object2world = glm::rotate(main_object.object2world, glm::radians(delta_rotX), glm::vec3(1.0, 0.0, 0.0));
-    main_object.object2world = glm::translate(main_object.object2world, glm::vec3(0.0, 0.0, delta_transZ));
-  }
-  else if (view_mode == MODE_CAMERA) {
+  if (view_mode == MODE_CAMERA) {
     // camera is reverse-facing, so reverse Z translation and X rotation.
     // in addition, the view matrix is the inverse of the camera2world(it's world->camera), so we'll reverse the transformations.
     // alternatively, imagine that you transform the world, instead of positioning the camera.
@@ -603,18 +556,6 @@ void logic() {
     }
   }
 
-  // handle arcball
-  if (cur_mx != last_mx || cur_my != last_my) {
-    glm::vec3 va = get_arcball_vector(last_mx, last_my);
-    glm::vec3 vb = get_arcball_vector(cur_mx, cur_my);
-    float angle = acos(std::min(1.0f, glm::dot(va, vb)));
-    glm::vec3 axis_in_camera_coord = glm::cross(va, vb);
-    glm::mat3 camera2object = glm::inverse(glm::mat3(transforms[MODE_CAMERA]) * glm::mat3(main_object.object2world));
-    glm::vec3 axis_in_object_coord = camera2object * axis_in_camera_coord;
-    main_object.object2world = glm::rotate(main_object.object2world, angle, axis_in_object_coord);
-    last_mx = cur_mx;
-    last_my = cur_my;
-  }
   
   // view
   glm::mat4 world2camera = transforms[MODE_CAMERA];
@@ -794,6 +735,18 @@ void draw_portal_stencil(std::vector<glm::mat4> view_stack, Mesh* portal) {
   glClear(GL_STENCIL_BUFFER_BIT); // needs mask=0xFF
   glUniformMatrix4fv(uniform_v, 1, GL_FALSE, glm::value_ptr(view_stack[0]));
   portal->draw();
+  if (debug) {
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glStencilMask(0x00);
+    glStencilFunc(GL_LEQUAL, 1, 0xff);
+    fill_screen();
+    glutSwapBuffers();
+    std::cout << "swap" << std::endl;
+    sleep(1);
+    glStencilMask(0xff);
+    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+  }
 
   for (unsigned int i = 1; i < view_stack.size() - 1; i++) {  // ignore last view
     // increment intersection for current portal
@@ -801,12 +754,36 @@ void draw_portal_stencil(std::vector<glm::mat4> view_stack, Mesh* portal) {
     glStencilOp(GL_INCR, GL_KEEP, GL_KEEP); // draw 1s on test fail(always)
     glUniformMatrix4fv(uniform_v, 1, GL_FALSE, glm::value_ptr(view_stack[i]));
     portal->draw();
+    if (debug) {
+      glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+      glClear(GL_COLOR_BUFFER_BIT);
+      glStencilMask(0x00);
+      glStencilFunc(GL_LEQUAL, 1, 0xff);
+      fill_screen();
+      glutSwapBuffers();
+      std::cout << "swap" << std::endl;
+      sleep(1);
+      glStencilMask(0xff);
+      glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+    }
 
     // decremental outer portal -> only sub-portal intersection remains
     glStencilFunc(GL_NEVER, 0, 0xff);
     glStencilOp(GL_DECR, GL_KEEP, GL_KEEP); // draw 1s on test fail(always)
     glUniformMatrix4fv(uniform_v, 1, GL_FALSE, glm::value_ptr(view_stack[i-1]));
     portal->draw();
+    if (debug) {
+      glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+      glClear(GL_COLOR_BUFFER_BIT);
+      glStencilMask(0x00);
+      glStencilFunc(GL_LEQUAL, 1, 0xff);
+      fill_screen();
+      glutSwapBuffers();
+      std::cout << "swap" << std::endl;
+      sleep(1);
+      glStencilMask(0xff);
+      glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+    }
   }
 
   glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
@@ -850,10 +827,12 @@ bool clip_portal(std::vector<glm::mat4> view_stack, Mesh *outer_portal, rect *sc
       if (p[i].y > max_y.y) max_y = p[i];
     }
 
+    std::cout << "check(max_y):" << max_y.y << " " << std::endl;
     min_x.x = (std::max(-1.0f, min_x.x) + 1) / 2 * screen_width;
     max_x.x = (std::min(1.0f, max_x.x) + 1) / 2 * screen_width;
     min_y.y = (std::max(-1.0f, min_y.y) + 1) / 2 * screen_height;
     max_y.y = (std::min(1.0f, max_y.y) + 1) / 2 * screen_height;
+    std::cout << "debug: " << min_x.x << " " << max_x.x << " " << min_y.y << " " << max_y.y << std::endl;
 
     r->x = min_x.x;  r->y = min_y.y;
     r->w = max_x.x - min_x.x;  r->h = max_y.y - min_y.y;
@@ -868,14 +847,21 @@ bool clip_portal(std::vector<glm::mat4> view_stack, Mesh *outer_portal, rect *sc
     }
 
     if (scissor->w <= 0 || scissor->h <= 0) {
-      return false;
+      std::cout << "failed" << std::endl;
+      // return false;
     }
   }
   return true;
 }
 
+std::vector<std::pair<int, int>> view_his;
 void draw_portals(std::vector<glm::mat4> view_stack, int rec, int outer_portal, int portal_set) {
   // TODO: replace rec with size threshold for MV * portal.bbox?
+  view_his.push_back(std::make_pair(outer_portal, portal_set));
+  for (auto it: view_his) {
+    std::cout << "(" << it.first << "," << it.second << ") ";
+  }
+  std::cout << std::endl;
 
   GLboolean save_stencil_test;
   glGetBooleanv(GL_STENCIL_TEST, &save_stencil_test);
@@ -885,14 +871,25 @@ void draw_portals(std::vector<glm::mat4> view_stack, int rec, int outer_portal, 
   for (int j = 0; j < portals[0].size(); j++) {
     for (int i = 0; i < 2; i++) {
       // Important: don't draw outer_portal's outgoing portal - only draw the same portqal when displaying a sub-portal (seen from the other portal)
-      if ((outer_portal == -1 && portal_set == -1) || (i == outer_portal || j == portal_set)) {
+      if (outer_portal == -1 && portal_set == -1) {
         glm::mat4 portal_cam = portal_view(view_stack.back(), &portals[i][j], &portals[i^1][j]);
+        glm::vec3 tmp = portal_cam * glm::vec4(0, 0, 0, 1);
+        std::cout << rec << ":" << tmp.x << " " << tmp.y << " " << tmp.z << std::endl;
         view_stack.push_back(portal_cam);
         draw_scene(view_stack, rec + 1, i, j);
         view_stack.pop_back();
         glUniformMatrix4fv(uniform_v, 1, GL_FALSE, glm::value_ptr(view_stack.back()));
         glUniformMatrix4fv(uniform_v_inv, 1, GL_FALSE, glm::value_ptr(glm::inverse(view_stack.back())));
         // TODO: write something without lines. I don't have confidence in its interaction with the stencil buffer
+      }
+      else if (target_portals[portal_set][outer_portal].count(std::make_pair(j, i))) {
+        glm::mat4 portal_cam = portal_view(view_stack.back(), &portals[outer_portal][portal_set], &portals[i][j]);
+        glm::vec3 tmp = portal_cam * glm::vec4(0, 0, 0, 1);
+        view_stack.push_back(portal_cam);
+        draw_scene(view_stack, rec + 1, i ^ 1, j);
+        view_stack.pop_back();
+        glUniformMatrix4fv(uniform_v, 1, GL_FALSE, glm::value_ptr(view_stack.back()));
+        glUniformMatrix4fv(uniform_v_inv, 1, GL_FALSE, glm::value_ptr(glm::inverse(view_stack.back())));
       }
     }
   }
@@ -917,6 +914,7 @@ void draw_portals(std::vector<glm::mat4> view_stack, int rec, int outer_portal, 
   }
   glColorMask(save_color_mask[0], save_color_mask[1], save_color_mask[2], save_color_mask[3]);
   glDepthMask(save_depth_mask);
+  view_his.pop_back();
 }
 
 void draw_scene(std::vector<glm::mat4> view_stack, int rec, int outer_portal = -1, int portal_set = -1) {
@@ -957,7 +955,9 @@ void draw_scene(std::vector<glm::mat4> view_stack, int rec, int outer_portal = -
   }
 
   // draw scene
-  main_object.draw();
+  for (int i = 0; i < main_object.size(); i++) {
+    main_object[i].draw();
+  }
   for (int i = 0; i < ground.size(); i++) {
     ground[i].draw();
   }
