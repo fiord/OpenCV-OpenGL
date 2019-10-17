@@ -10,24 +10,24 @@
 #define GROUND_SIZE 20
 
 glm::mat4 func1(int i, int j) {
-  return glm::translate(glm::mat4(1), glm::vec3(0, 1, -2));
+  return glm::translate(glm::mat4(1), glm::vec3(0, 1, -3));
 }
 glm::mat4 func1_rev(int i, int j) {
-  return glm::translate(glm::mat4(1), glm::vec3(0, 1, 2)) * glm::rotate(glm::mat4(1), glm::radians(180.0f), glm::vec3(0, 1, 0));
+  return glm::translate(glm::mat4(1), glm::vec3(3, 1, 0)) * glm::rotate(glm::mat4(1), glm::radians(-90.0f), glm::vec3(0, 1, 0));
 }
 
 glm::mat4 func2(int i, int j) {
-  return glm::translate(glm::mat4(1), glm::vec3(0, -10 + 1, -2));
+  return glm::translate(glm::mat4(1), glm::vec3(0, -10 + 1, -3));
 }
 glm::mat4 func2_rev(int i, int j) {
-  return glm::translate(glm::mat4(1), glm::vec3(0, -10 + 1, 2)) * glm::rotate(glm::mat4(1), glm::radians(180.0f), glm::vec3(0, 1, 0));
+  return glm::translate(glm::mat4(1), glm::vec3(3, -10 + 1, 0)) * glm::rotate(glm::mat4(1), glm::radians(-90.0f), glm::vec3(0, 1, 0));
 }
 
 glm::mat4 func3(int i, int j) {
-  return glm::translate(glm::mat4(1), glm::vec3(0, -20 + 1, -2));
+  return glm::translate(glm::mat4(1), glm::vec3(0, -20 + 1, -3));
 }
 glm::mat4 func3_rev(int i, int j) {
-  return glm::translate(glm::mat4(1), glm::vec3(0, -20 + 1, 2)) * glm::rotate(glm::mat4(1), glm::radians(180.0f), glm::vec3(0, 1, 0));
+  return glm::translate(glm::mat4(1), glm::vec3(3, -20 + 1, 0)) * glm::rotate(glm::mat4(1), glm::radians(-90.0f), glm::vec3(0, 1, 0));
 }
 
 glm::mat4 (*portal_init_pos_funcs[][2])(int,int) = {

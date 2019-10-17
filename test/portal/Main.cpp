@@ -22,6 +22,7 @@ bool debug = false;
 #define WINDOW_X (800)
 #define WINDOW_Y (500)
 #define WINDOW_NAME "test"
+#define REC_DEPTH 5
 
 struct rect{ int x, y, w, h; };
 
@@ -42,8 +43,6 @@ void glut_motion(int x, int y);
 void glut_reshape(int width, int height);
 void glut_idle();
 
-void create_room();
-
 // portal
 void create_portal(Mesh*, int, int, float, float);
 glm::mat4 portal_view(glm::mat4, Mesh*, Mesh*);
@@ -52,8 +51,8 @@ void logic();
 void fill_screen();
 void draw_camera();
 void draw_portal_bbox(Mesh*);
-void draw_portal_stencil(std::vector<glm::mat4>, Mesh*);
-bool clip_portal(std::vector<glm::mat4>, Mesh*, rect*);
+void draw_portal_stencil(std::vector<glm::mat4>);
+bool clip_portal(std::vector<glm::mat4>, rect*);
 void draw_portals(std::vector<glm::mat4>, int, int, int);
 void draw_scene(std::vector<glm::mat4>, int, int, int);
 void draw();
@@ -243,7 +242,7 @@ bool init_function(char *model_filename, char *vshader_filename, char *fshader_f
 
 void init_view() {
   transforms[MODE_CAMERA] = glm::lookAt(
-      glm::vec3(0.0, 1.0, 6.0), // eye
+      glm::vec3(0.0, 1.0, 1.5), // eye
       glm::vec3(0.0, 1.0, 0.0), // direction
       glm::vec3(0.0, 1.0, 0.0)  // up
   );
@@ -719,7 +718,9 @@ void draw_portal_bbox(Mesh *portal) {
   portal_bbox.draw();
 }
 
-void draw_portal_stencil(std::vector<glm::mat4> view_stack, Mesh* portal) {
+std::vector<std::pair<int, int>> view_his;
+// the original function 'draw_portal_stencil' is only for the case which there is only one pair of portals
+void draw_portal_stencil(std::vector<glm::mat4> view_stack) {
   GLboolean save_color_mask[4];
   GLboolean save_depth_mask;
   glGetBooleanv(GL_COLOR_WRITEMASK, save_color_mask);
@@ -734,6 +735,7 @@ void draw_portal_stencil(std::vector<glm::mat4> view_stack, Mesh* portal) {
   // draw stencil pattern
   glClear(GL_STENCIL_BUFFER_BIT); // needs mask=0xFF
   glUniformMatrix4fv(uniform_v, 1, GL_FALSE, glm::value_ptr(view_stack[0]));
+  Mesh *portal = &portals[view_his[1].first][view_his[1].second];
   portal->draw();
   if (debug) {
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
@@ -753,6 +755,7 @@ void draw_portal_stencil(std::vector<glm::mat4> view_stack, Mesh* portal) {
     glStencilFunc(GL_EQUAL, 0, 0xff);
     glStencilOp(GL_INCR, GL_KEEP, GL_KEEP); // draw 1s on test fail(always)
     glUniformMatrix4fv(uniform_v, 1, GL_FALSE, glm::value_ptr(view_stack[i]));
+    portal = &portals[view_his[i + 1].first][view_his[i + 1].second];
     portal->draw();
     if (debug) {
       glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
@@ -761,7 +764,7 @@ void draw_portal_stencil(std::vector<glm::mat4> view_stack, Mesh* portal) {
       glStencilFunc(GL_LEQUAL, 1, 0xff);
       fill_screen();
       glutSwapBuffers();
-      std::cout << "swap" << std::endl;
+      std::cout << "swap:" << i << std::endl;
       sleep(1);
       glStencilMask(0xff);
       glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
@@ -779,7 +782,7 @@ void draw_portal_stencil(std::vector<glm::mat4> view_stack, Mesh* portal) {
       glStencilFunc(GL_LEQUAL, 1, 0xff);
       fill_screen();
       glutSwapBuffers();
-      std::cout << "swap" << std::endl;
+      std::cout << "swap" << i << std::endl;
       sleep(1);
       glStencilMask(0xff);
       glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
@@ -797,18 +800,21 @@ void draw_portal_stencil(std::vector<glm::mat4> view_stack, Mesh* portal) {
   // now ready for drawing main scene.
 }
 
-bool clip_portal(std::vector<glm::mat4> view_stack, Mesh *outer_portal, rect *scissor) {
+// the original clip_portal function is only for the case which there is only one pair of portals.
+// found the clip size of the portal.
+bool clip_portal(std::vector<glm::mat4> view_stack, rect *scissor) {
   scissor->x = scissor->y = 0;
   scissor->w = screen_width;
   scissor->h = screen_height;
-  for(unsigned int v = 0; v < view_stack.size() - 1; v++) { // ignore the last view
+  unsigned v = view_stack.size() - 2;
+  for(unsigned v = 1; v < view_his.size(); v++) {
     glm::vec4 p[4];
     rect *r = new rect;
     bool found_negative_w = false;
     for (int pi = 0; pi < 4; pi++) {
-      p[pi] = (glm::perspective(fovy, 1.0f * screen_width / screen_height, zNear, 100.0f) * view_stack[v] * outer_portal->object2world) * outer_portal->vertices[pi];
+      Mesh *outer_portal = &portals[view_his[v].first][view_his[v].second];
+      p[pi] = (glm::perspective(fovy, 1.0f * screen_width / screen_height, zNear, 100.0f) * view_stack[v - 1] * outer_portal->object2world) * outer_portal->vertices[pi];
       if (p[pi].w < 0) {
-        // TODO
         found_negative_w = true;
       }
       else {
@@ -816,7 +822,10 @@ bool clip_portal(std::vector<glm::mat4> view_stack, Mesh *outer_portal, rect *sc
         p[pi].y /= p[pi].w;
       }
     }
-    if (found_negative_w) continue;
+    if (found_negative_w) {
+      // TODO: I have no confidence
+      continue;
+    }
 
     glm::vec4 min_x, max_x, min_y, max_y;
     min_x = max_x = min_y = max_y = p[0];
@@ -827,12 +836,10 @@ bool clip_portal(std::vector<glm::mat4> view_stack, Mesh *outer_portal, rect *sc
       if (p[i].y > max_y.y) max_y = p[i];
     }
 
-    std::cout << "check(max_y):" << max_y.y << " " << std::endl;
     min_x.x = (std::max(-1.0f, min_x.x) + 1) / 2 * screen_width;
     max_x.x = (std::min(1.0f, max_x.x) + 1) / 2 * screen_width;
     min_y.y = (std::max(-1.0f, min_y.y) + 1) / 2 * screen_height;
     max_y.y = (std::min(1.0f, max_y.y) + 1) / 2 * screen_height;
-    std::cout << "debug: " << min_x.x << " " << max_x.x << " " << min_y.y << " " << max_y.y << std::endl;
 
     r->x = min_x.x;  r->y = min_y.y;
     r->w = max_x.x - min_x.x;  r->h = max_y.y - min_y.y;
@@ -848,18 +855,21 @@ bool clip_portal(std::vector<glm::mat4> view_stack, Mesh *outer_portal, rect *sc
 
     if (scissor->w <= 0 || scissor->h <= 0) {
       std::cout << "failed" << std::endl;
-      // return false;
+      return false;
     }
   }
   return true;
 }
 
-std::vector<std::pair<int, int>> view_his;
 void draw_portals(std::vector<glm::mat4> view_stack, int rec, int outer_portal, int portal_set) {
   // TODO: replace rec with size threshold for MV * portal.bbox?
-  view_his.push_back(std::make_pair(outer_portal, portal_set));
   for (auto it: view_his) {
     std::cout << "(" << it.first << "," << it.second << ") ";
+  }
+  std::cout << std::endl;
+  for (auto it:view_stack) {
+    glm::vec4 tmp = it * glm::vec4(0, 1, 0, 1);
+    std::cout << "(" << tmp.x << "," << tmp.y << "," << tmp.z << ") ";
   }
   std::cout << std::endl;
 
@@ -870,7 +880,7 @@ void draw_portals(std::vector<glm::mat4> view_stack, int rec, int outer_portal, 
   glEnable(GL_SCISSOR_TEST);
   for (int j = 0; j < portals[0].size(); j++) {
     for (int i = 0; i < 2; i++) {
-      // Important: don't draw outer_portal's outgoing portal - only draw the same portqal when displaying a sub-portal (seen from the other portal)
+      // first draw
       if (outer_portal == -1 && portal_set == -1) {
         glm::mat4 portal_cam = portal_view(view_stack.back(), &portals[i][j], &portals[i^1][j]);
         glm::vec3 tmp = portal_cam * glm::vec4(0, 0, 0, 1);
@@ -880,11 +890,10 @@ void draw_portals(std::vector<glm::mat4> view_stack, int rec, int outer_portal, 
         view_stack.pop_back();
         glUniformMatrix4fv(uniform_v, 1, GL_FALSE, glm::value_ptr(view_stack.back()));
         glUniformMatrix4fv(uniform_v_inv, 1, GL_FALSE, glm::value_ptr(glm::inverse(view_stack.back())));
-        // TODO: write something without lines. I don't have confidence in its interaction with the stencil buffer
       }
+      // second draw
       else if (target_portals[portal_set][outer_portal].count(std::make_pair(j, i))) {
-        glm::mat4 portal_cam = portal_view(view_stack.back(), &portals[outer_portal][portal_set], &portals[i][j]);
-        glm::vec3 tmp = portal_cam * glm::vec4(0, 0, 0, 1);
+        glm::mat4 portal_cam = portal_view(view_stack.back(), &portals[i ^ 1][j], &portals[i][j]);
         view_stack.push_back(portal_cam);
         draw_scene(view_stack, rec + 1, i ^ 1, j);
         view_stack.pop_back();
@@ -914,18 +923,18 @@ void draw_portals(std::vector<glm::mat4> view_stack, int rec, int outer_portal, 
   }
   glColorMask(save_color_mask[0], save_color_mask[1], save_color_mask[2], save_color_mask[3]);
   glDepthMask(save_depth_mask);
-  view_his.pop_back();
 }
 
 void draw_scene(std::vector<glm::mat4> view_stack, int rec, int outer_portal = -1, int portal_set = -1) {
-  if (rec >= 5) {
-    // TODO?
+  if (rec >= REC_DEPTH) {
     return;
   }
+  view_his.push_back(std::make_pair(outer_portal, portal_set));
   rect *scissor = new rect;
   if (outer_portal != -1 && portal_set != -1) {
     // if basic clipping returns an empty rectangle, we can stop here
-    if (!clip_portal(view_stack, &portals[outer_portal][portal_set], scissor)) {
+    if (!clip_portal(view_stack, scissor)) {
+      view_his.pop_back();
       return;
     }
   }
@@ -944,7 +953,7 @@ void draw_scene(std::vector<glm::mat4> view_stack, int rec, int outer_portal = -
     glScissor(scissor->x, scissor->y, scissor->w, scissor->h);
 
     // draw the current stencil - or actually recreate it if we just drew a sub-portal and hence messed the stencil buffer
-    draw_portal_stencil(view_stack, &portals[outer_portal][portal_set]);
+    draw_portal_stencil(view_stack);
   }
 
   // draw portals frames after the stencil buffer is set
@@ -968,6 +977,7 @@ void draw_scene(std::vector<glm::mat4> view_stack, int rec, int outer_portal = -
     glUniformMatrix4fv(uniform_v, 1, GL_FALSE, glm::value_ptr(view_stack.back()));
     glUniformMatrix4fv(uniform_v_inv, 1, GL_FALSE, glm::value_ptr(glm::inverse(view_stack.back())));
   }
+  view_his.pop_back();
 }
 
 void draw() {
@@ -985,6 +995,7 @@ void draw() {
   glViewport(2 * screen_width / 3, 0, screen_width / 3, screen_height / 3);
   glClear(GL_DEPTH_BUFFER_BIT);
   view_stack.clear();
+  /* is it useful? -maybe.
   view_stack.push_back(glm::lookAt(
         glm::vec3(0.0, 9.0, -2.0),  // eye
         glm::vec3(0.0, 0.0, -2.0),  // direction
@@ -992,4 +1003,10 @@ void draw() {
   ));
   draw_scene(view_stack, 4);
   draw_camera();
+  */
 }
+
+// TODO: failed to render tri-loop portals like below
+//           portal1|----------|portal1'
+//  portal2=portal1'|----------|portal2'
+//  portal3=portal2'|----------|portal3'=portal1
