@@ -50,7 +50,7 @@ int portal_intersection(glm::vec4, glm::vec4, Mesh*);
 void logic();
 void fill_screen();
 void draw_camera();
-// void draw_portal_bbox(Mesh*);
+void draw_portal_bbox(Mesh*);
 void draw_portal_stencil(std::vector<glm::mat4>);
 bool clip_portal(std::vector<glm::mat4>, rect*);
 void draw_portals(std::vector<glm::mat4>, int, int, int);
@@ -670,7 +670,6 @@ void draw_camera() {
 }
 
 // draw a frame around the portal
-/*
 void draw_portal_bbox(Mesh *portal) {
   // 0.05 frame around the portal
   Mesh portal_bbox;
@@ -718,7 +717,6 @@ void draw_portal_bbox(Mesh *portal) {
   portal_bbox.object2world = portal->object2world * glm::rotate(glm::mat4(1), glm::radians(180.0f), glm::vec3(0, 1, 0));
   portal_bbox.draw();
 }
-*/
 
 std::vector<std::pair<int, int>> view_his;
 // the original function 'draw_portal_stencil' is only for the case which there is only one pair of portals
@@ -964,13 +962,11 @@ void draw_scene(std::vector<glm::mat4> view_stack, int rec, int outer_portal = -
   }
 
   // draw portals frames after the stencil buffer is set
-  /*
   for (int j = 0; j < portals[0].size(); j++) {
     for (int i = 0; i < 2; i++) {
       draw_portal_bbox(&portals[i][j]);
     }
   }
-  */
 
   // draw scene
   for (int i = 0; i < main_object.size(); i++) {
