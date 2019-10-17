@@ -17,7 +17,7 @@ bool debug = false;
 #include "common/shader_utils.hpp"
 #include "common/Mesh.hpp"
 #include "Player.hpp"
-#include "portal1.hpp"
+#include "room1.hpp"
 
 #define WINDOW_X (800)
 #define WINDOW_Y (500)
@@ -50,7 +50,7 @@ int portal_intersection(glm::vec4, glm::vec4, Mesh*);
 void logic();
 void fill_screen();
 void draw_camera();
-void draw_portal_bbox(Mesh*);
+// void draw_portal_bbox(Mesh*);
 void draw_portal_stencil(std::vector<glm::mat4>);
 bool clip_portal(std::vector<glm::mat4>, rect*);
 void draw_portals(std::vector<glm::mat4>, int, int, int);
@@ -670,6 +670,7 @@ void draw_camera() {
 }
 
 // draw a frame around the portal
+/*
 void draw_portal_bbox(Mesh *portal) {
   // 0.05 frame around the portal
   Mesh portal_bbox;
@@ -717,6 +718,7 @@ void draw_portal_bbox(Mesh *portal) {
   portal_bbox.object2world = portal->object2world * glm::rotate(glm::mat4(1), glm::radians(180.0f), glm::vec3(0, 1, 0));
   portal_bbox.draw();
 }
+*/
 
 std::vector<std::pair<int, int>> view_his;
 // the original function 'draw_portal_stencil' is only for the case which there is only one pair of portals
@@ -806,8 +808,7 @@ bool clip_portal(std::vector<glm::mat4> view_stack, rect *scissor) {
   scissor->x = scissor->y = 0;
   scissor->w = screen_width;
   scissor->h = screen_height;
-  unsigned v = view_stack.size() - 2;
-  for(unsigned v = 1; v < view_his.size(); v++) {
+  for(unsigned v = 1; v < view_his.size(); v++) { // ignore the last view
     glm::vec4 p[4];
     rect *r = new rect;
     bool found_negative_w = false;
@@ -854,7 +855,7 @@ bool clip_portal(std::vector<glm::mat4> view_stack, rect *scissor) {
     }
 
     if (scissor->w <= 0 || scissor->h <= 0) {
-      std::cout << "failed" << std::endl;
+      // std::cout << "failed" << std::endl;
       return false;
     }
   }
@@ -863,8 +864,9 @@ bool clip_portal(std::vector<glm::mat4> view_stack, rect *scissor) {
 
 void draw_portals(std::vector<glm::mat4> view_stack, int rec, int outer_portal, int portal_set) {
   // TODO: replace rec with size threshold for MV * portal.bbox?
+  /*
   for (auto it: view_his) {
-    std::cout << "(" << it.first << "," << it.second << ") ";
+    std::cout << "(" << it.second << "," << it.first << ") ";
   }
   std::cout << std::endl;
   for (auto it:view_stack) {
@@ -872,6 +874,7 @@ void draw_portals(std::vector<glm::mat4> view_stack, int rec, int outer_portal, 
     std::cout << "(" << tmp.x << "," << tmp.y << "," << tmp.z << ") ";
   }
   std::cout << std::endl;
+  */
 
   GLboolean save_stencil_test;
   glGetBooleanv(GL_STENCIL_TEST, &save_stencil_test);
@@ -883,8 +886,9 @@ void draw_portals(std::vector<glm::mat4> view_stack, int rec, int outer_portal, 
       // first draw
       if (outer_portal == -1 && portal_set == -1) {
         glm::mat4 portal_cam = portal_view(view_stack.back(), &portals[i][j], &portals[i^1][j]);
-        glm::vec3 tmp = portal_cam * glm::vec4(0, 0, 0, 1);
-        std::cout << rec << ":" << tmp.x << " " << tmp.y << " " << tmp.z << std::endl;
+        glm::vec3 tmp = portal_cam * glm::vec4(0, 1, 0, 1);
+        // std::cout << "start from (" << j << "," << i << ")" << std::endl;
+        // std::cout << rec << ":" << tmp.x << " " << tmp.y << " " << tmp.z << std::endl;
         view_stack.push_back(portal_cam);
         draw_scene(view_stack, rec + 1, i, j);
         view_stack.pop_back();
@@ -893,9 +897,12 @@ void draw_portals(std::vector<glm::mat4> view_stack, int rec, int outer_portal, 
       }
       // second draw
       else if (target_portals[portal_set][outer_portal].count(std::make_pair(j, i))) {
-        glm::mat4 portal_cam = portal_view(view_stack.back(), &portals[i ^ 1][j], &portals[i][j]);
+        glm::mat4 portal_cam = portal_view(view_stack.back(), &portals[i][j], &portals[i^1][j]);
+        // std::cout << "challenge (" << portal_set << "," << outer_portal << ") -> (" << j << "," << i << ")" << std::endl;
+        // glm::vec3 tmp = portal_cam * glm::vec4(0, 1, 0, 1);
+        // std::cout << rec << ":" << tmp.x << " " << tmp.y << " " << tmp.z << std::endl;
         view_stack.push_back(portal_cam);
-        draw_scene(view_stack, rec + 1, i ^ 1, j);
+        draw_scene(view_stack, rec + 1, i, j);
         view_stack.pop_back();
         glUniformMatrix4fv(uniform_v, 1, GL_FALSE, glm::value_ptr(view_stack.back()));
         glUniformMatrix4fv(uniform_v_inv, 1, GL_FALSE, glm::value_ptr(glm::inverse(view_stack.back())));
@@ -957,11 +964,13 @@ void draw_scene(std::vector<glm::mat4> view_stack, int rec, int outer_portal = -
   }
 
   // draw portals frames after the stencil buffer is set
+  /*
   for (int j = 0; j < portals[0].size(); j++) {
     for (int i = 0; i < 2; i++) {
       draw_portal_bbox(&portals[i][j]);
     }
   }
+  */
 
   // draw scene
   for (int i = 0; i < main_object.size(); i++) {

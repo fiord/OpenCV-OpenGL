@@ -44,15 +44,15 @@ std::vector<Mesh>  portals[2];
 
 void world_init() {
   main_object = std::vector<Mesh>(1);
-  load_obj("cube.obj", &main_object[0]);
+  // load_obj("cube.obj", &main_object[0]);
   main_object[0].object2world = glm::translate(glm::mat4(1), glm::vec3(0, 1 - 0, 0));
 
-  target_portals[0][0].insert(std::make_pair(2, 1));
-  target_portals[0][1].insert(std::make_pair(1, 0));
-  target_portals[1][0].insert(std::make_pair(0, 1));
-  target_portals[1][1].insert(std::make_pair(2, 0));
-  target_portals[2][0].insert(std::make_pair(1, 1));
-  target_portals[2][1].insert(std::make_pair(0, 0));
+  target_portals[0][0].insert(std::make_pair(1, 0));
+  target_portals[0][1].insert(std::make_pair(2, 1));
+  target_portals[1][0].insert(std::make_pair(2, 0));
+  target_portals[1][1].insert(std::make_pair(0, 1));
+  target_portals[2][0].insert(std::make_pair(0, 0));
+  target_portals[2][1].insert(std::make_pair(1, 1));
   
   glm::vec3 light_position = glm::vec3(0.0, 1.0, 2.0);
   light_bbox.vertices.push_back(glm::vec4(-0.1, -0.1, -0.1, 0.0));
