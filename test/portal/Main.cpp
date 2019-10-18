@@ -17,7 +17,7 @@ bool debug = false;
 #include "common/shader_utils.hpp"
 #include "common/Mesh.hpp"
 #include "Player.hpp"
-#include "room1.hpp"
+#include "room2.hpp"
 
 #define WINDOW_X (800)
 #define WINDOW_Y (500)

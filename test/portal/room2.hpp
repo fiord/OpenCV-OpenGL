@@ -58,7 +58,7 @@ glm::mat4 (*portal_init_pos_funcs[][2])(int,int) = {
   {func3, func4_rev},
   {func4, func5_rev},
   {func5, func6_rev},
-  {func6, func1_rev},
+  {func6, func1_rev}
 };
 
 std::set<std::pair<int, int>> target_portals[6][2];
@@ -71,15 +71,15 @@ glm::vec3 base_color[] = {
   {1.0, 0.0, 0.0},
   {0.0, 1.0, 0.0},
   {0.0, 0.0, 1.0},
-  {1.0, 1.0, 0.0},
   {0.0, 1.0, 1.0},
-  {1.0, 0.0, 1.0}
+  {1.0, 0.0, 1.0},
+  {1.0, 1.0, 0.0}
 };
 
 void world_init() {
   main_object = std::vector<Mesh>(1);
   // load_obj("cube.obj", &main_object[0]);
-  main_object[0].object2world = glm::translate(glm::mat4(1), glm::vec3(0, 1, 0));
+  main_object[0].object2world = glm::translate(glm::mat4(1), glm::vec3(0, 1 - 0, 0));
 
   target_portals[0][0].insert(std::make_pair(1, 0));
   target_portals[0][1].insert(std::make_pair(5, 1));
@@ -106,15 +106,15 @@ void world_init() {
   light_bbox.object2world = glm::translate(glm::mat4(1), light_position);
 
   ground = std::vector<Mesh>(18);
-  for (int idx = 6; idx < 6; idx++) {
+  for (int idx = 0; idx < 6; idx++) {
     for (int i = -GROUND_SIZE / 2; i < GROUND_SIZE / 2; i++) {
       for (int j = -GROUND_SIZE / 2; j < GROUND_SIZE / 2; j++) {
-        ground[3 * idx + 0].vertices.push_back(glm::vec4(i,      -idx * 10.0, j + 1, 1.0));
+        ground[3 * idx + 0].vertices.push_back(glm::vec4(i,    -idx * 10.0, j + 1, 1.0));
         ground[3 * idx + 0].vertices.push_back(glm::vec4(i + 1,  -idx * 10.0, j + 1, 1.0));
-        ground[3 * idx + 0].vertices.push_back(glm::vec4(i,      -idx * 10.0, j,     1.0));
-        ground[3 * idx + 0].vertices.push_back(glm::vec4(i,      -idx * 10.0, j,     1.0));
+        ground[3 * idx + 0].vertices.push_back(glm::vec4(i,    -idx * 10.0, j,   1.0));
+        ground[3 * idx + 0].vertices.push_back(glm::vec4(i,    -idx * 10.0, j,   1.0));
         ground[3 * idx + 0].vertices.push_back(glm::vec4(i + 1,  -idx * 10.0, j + 1, 1.0));
-        ground[3 * idx + 0].vertices.push_back(glm::vec4(i + 1,  -idx * 10.0, j,     1.0));
+        ground[3 * idx + 0].vertices.push_back(glm::vec4(i + 1,  -idx * 10.0, j,   1.0));
 
         for (int k = 0; k < 6; k++) {
           ground[3 * idx + 0].normals.push_back(glm::vec3(0.0, 1.0, 0.0));
