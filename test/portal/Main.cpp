@@ -16,7 +16,6 @@ bool debug = false;
 
 #include "common/shader_utils.hpp"
 #include "common/Mesh.hpp"
-#include "Player.hpp"
 #include "room1.hpp"
 
 #define WINDOW_X (800)
@@ -62,7 +61,10 @@ GLuint program;
 
 enum MODES { MODE_OBJECT, MODE_CAMERA, MODE_LIGHT, MODE_LAST };
 MODES view_mode = MODE_CAMERA;
-int rotY_direction = 0, rotX_direction = 0, transZ_direction = 0, strife = 0;
+int rotX_direction = 0, rotY_direction = 0;
+int transX_direction = 0, transY_direction = 0, transZ_direction = 0;
+glm::vec4 speed;
+int strife = 0;
 float speed_factor = 1;
 glm::mat4 transforms[MODE_LAST];
 int last_ticks = 0;
@@ -74,7 +76,6 @@ static float fovy = 45;
 
 bool g_isLeftButtonOn = false;
 bool g_isRightButtonOn = false;
-Player *mainPlayer;
 
 // sample:rotating crystal
 int rotate_cnt = 0;
@@ -140,7 +141,6 @@ void init_GL(int argc, char *argv[]) {
 }
 
 bool init_function(char *model_filename, char *vshader_filename, char *fshader_filename) {
-  mainPlayer = new Player();
   
   // world settings from portalX.hpp
   world_init();
@@ -268,26 +268,24 @@ void glut_keyboard(unsigned char key, int x, int y) {
       exit(0);
     case 'a':
     case 'A':
-      mainPlayer->changeVerocity(sin(mainPlayer->angle_2), 0, -cos(mainPlayer->angle_2));
       break;
     case 'w':
     case 'W':
-      mainPlayer->changeVerocity(cos(mainPlayer->angle_2), 0, sin(mainPlayer->angle_2));
       break;
     case 's':
     case 'S':
-      mainPlayer->changeVerocity(-cos(mainPlayer->angle_2), 0, -sin(mainPlayer->angle_2));
       break;
     case 'd':
     case 'D':
-      mainPlayer->changeVerocity(-sin(mainPlayer->angle_2), 0, cos(mainPlayer->angle_2));
       break;
     case ' ':
-      mainPlayer->changeVerocity(0, 0.5, 0);
       break;
   }
 
   glutPostRedisplay();
+}
+
+void glut_keyboardup(unsigned char key, int x, int y) {
 }
 
 void glut_special(int key, int x, int y) {
@@ -313,19 +311,15 @@ void glut_special(int key, int x, int y) {
       break;
     case GLUT_KEY_LEFT:
       rotY_direction = 1;
-      // mainPlayer->changeVerocity(-1.0, 0, 0);
       break;
     case GLUT_KEY_UP:
       transZ_direction = 1;
-      // mainPlayer->changeVerocity(0, 0, 1.0);
       break;
     case GLUT_KEY_DOWN:
       transZ_direction = -1;
-      // mainPlayer->changeVerocity(0, 0, -1.0);
       break;
     case GLUT_KEY_RIGHT:
       rotY_direction = -1;
-      // mainPlayer->changeVerocity(1.0, 0, 0);
       break;
     case GLUT_KEY_HOME:
       init_view();
@@ -360,7 +354,6 @@ void glut_motion(int x, int y) {
   /*
   static int px = -1, py = -1;
   if (px >= 0 && py >= 0) {
-    mainPlayer->moveGaze((x - px), (y - py));
   }
   px = x;
   py = y;
@@ -380,12 +373,7 @@ void glut_reshape(int width, int height) {
 }
 
 void glut_idle() {
-  // sample
-  rotate_cnt++;
-
   glm::mat4 prev_cam = transforms[MODE_CAMERA];
-  // update camera position depending on keyboard keys
-  mainPlayer->movePosition();
 
   // handle portals
   // movement of the camera in world view
@@ -403,13 +391,6 @@ void glut_idle() {
 }
 
 void glut_display() {
-  /*
-  double target_x, target_y, target_z;
-  mainPlayer->getTarget(target_x, target_y, target_z);
-  gluLookAt(mainPlayer->pos_x, mainPlayer->pos_y, mainPlayer->pos_z,
-      0.0, 0.0, 0.0,
-      0.0, 1.0, 0.0);
-  */
   logic();
   draw();
   glutSwapBuffers();
