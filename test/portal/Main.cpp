@@ -1,4 +1,4 @@
-#define DEBUG 0
+#undef DEBUG
 bool debug = false;
 #include <cmath>
 #include <unistd.h>
@@ -16,7 +16,7 @@ bool debug = false;
 
 #include "common/shader_utils.hpp"
 #include "common/Mesh.hpp"
-#include "room1.hpp"
+#include "tunnel1.hpp"
 
 #define WINDOW_X (800)
 #define WINDOW_Y (500)
@@ -51,7 +51,9 @@ int portal_intersection(glm::vec4, glm::vec4, Mesh*);
 void logic();
 void fill_screen();
 void draw_camera();
+#ifdef DEBUG
 void draw_portal_bbox(Mesh*);
+#endif
 void draw_portal_stencil(std::vector<glm::mat4>);
 bool clip_portal(std::vector<glm::mat4>, rect*);
 void draw_portals(std::vector<glm::mat4>, int, int, int);
@@ -381,10 +383,11 @@ void glut_reshape(int width, int height) {
 }
 
 void glut_idle() {
-  glm::mat4 prev_cam = transforms[MODE_CAMERA];
 
   // handle portals
   // movement of the camera in world view
+  /*
+  glm::mat4 prev_cam = transforms[MODE_CAMERA];
   for (int j = 0; j < portals[0].size(); j++) {
     for (int i = 0; i < 2; i++) {
       glm::vec4 la = glm::inverse(prev_cam) * glm::vec4(0.0, 0.0, 0.0, 1.0);
@@ -394,6 +397,7 @@ void glut_idle() {
       }
     }
   }
+  */
 
   glutPostRedisplay();
 }
@@ -468,9 +472,10 @@ int portal_intersection(glm::vec4 la, glm::vec4 lb, Mesh* portal) {
       float t = tuv.x, u = tuv.y, v = tuv.z;
 
       // intersection with the plane
-      if (t >= -1e-6 && t <= 1 + 1e-6) {
+      static const float eps = 1e-6;
+      if (t >= -eps && t <= 1 + eps) {
         // intersection with the triangle
-        if (u >= -1e-6 && u <= 1 + 1e-6 && v >= -1e-6 && v <= 1 + 1e-6 && (u + v) <= 1 + 1e-6) {
+        if (u >= -eps && u <= 1 + eps && v >= -eps && v <= 1 + eps && (u + v) <= 1 + eps) {
           return 1;
         }
       }
@@ -547,9 +552,11 @@ void logic() {
       glm::vec4 lb = glm::inverse(transforms[MODE_CAMERA]) * glm::vec4(0.0, 0.0, 0.0, 1.0);
       if (portal_intersection(la, lb, &portals[i][j])) {
         transforms[MODE_CAMERA] = portal_view(transforms[MODE_CAMERA], &portals[i][j], &portals[i^1][j]);
+        break;
       }
     }
   }
+  prev_cam = transforms[MODE_CAMERA];
 
   
   // view
@@ -665,6 +672,7 @@ void draw_camera() {
   glDeleteBuffers(1, &vbo_vertices);
 }
 
+#ifdef DEBUG
 // draw a frame around the portal
 void draw_portal_bbox(Mesh *portal) {
   // 0.05 frame around the portal
@@ -713,6 +721,7 @@ void draw_portal_bbox(Mesh *portal) {
   portal_bbox.object2world = portal->object2world * glm::rotate(glm::mat4(1), glm::radians(180.0f), glm::vec3(0, 1, 0));
   portal_bbox.draw();
 }
+#endif
 
 std::vector<std::pair<int, int>> view_his;
 // the original function 'draw_portal_stencil' is only for the case which there is only one pair of portals
@@ -958,11 +967,13 @@ void draw_scene(std::vector<glm::mat4> view_stack, int rec, int outer_portal = -
   }
 
   // draw portals frames after the stencil buffer is set
+#ifdef DEBUG
   for (int j = 0; j < portals[0].size(); j++) {
     for (int i = 0; i < 2; i++) {
       draw_portal_bbox(&portals[i][j]);
     }
   }
+#endif
 
   // draw scene
   for (int i = 0; i < main_object.size(); i++) {
