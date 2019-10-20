@@ -22,6 +22,7 @@ bool debug = false;
 #define WINDOW_Y (500)
 #define WINDOW_NAME "test"
 #define REC_DEPTH 5
+#define GRAVITY 0.98 / 100.0
 
 struct rect{ int x, y, w, h; };
 
@@ -35,6 +36,7 @@ void set_callback_functions();
 
 void glut_display();
 void glut_keyboard(unsigned char key, int x, int y);
+void glut_keyboardup(unsigned char key, int x, int y);
 void glut_special(int key, int x, int y);
 void glut_specialup(int key, int x, int y);
 void glut_mouse(int button, int state, int x, int y);
@@ -62,9 +64,8 @@ GLuint program;
 enum MODES { MODE_OBJECT, MODE_CAMERA, MODE_LIGHT, MODE_LAST };
 MODES view_mode = MODE_CAMERA;
 int rotX_direction = 0, rotY_direction = 0;
-int transX_direction = 0, transY_direction = 0, transZ_direction = 0;
-glm::vec4 speed;
-int strife = 0;
+int transX_direction = 0, transZ_direction = 0;
+float transY_speed = 0;
 float speed_factor = 1;
 glm::mat4 transforms[MODE_LAST];
 int last_ticks = 0;
@@ -241,16 +242,13 @@ bool init_function(char *model_filename, char *vshader_filename, char *fshader_f
 }
 
 void init_view() {
-  transforms[MODE_CAMERA] = glm::lookAt(
-      glm::vec3(0.0, 1.0, 1.5), // eye
-      glm::vec3(0.0, 1.0, 0.0), // direction
-      glm::vec3(0.0, 1.0, 0.0)  // up
-  );
+  transforms[MODE_CAMERA] = camera_view;
 }
 
 void set_callback_functions() {
   glutDisplayFunc(glut_display);
   glutKeyboardFunc(glut_keyboard);
+  glutKeyboardUpFunc(glut_keyboardup);
   glutSpecialFunc(glut_special);
   glutSpecialUpFunc(glut_specialup);
   glutMouseFunc(glut_mouse);
@@ -268,17 +266,25 @@ void glut_keyboard(unsigned char key, int x, int y) {
       exit(0);
     case 'a':
     case 'A':
+      rotY_direction = 1;
       break;
     case 'w':
     case 'W':
+      rotX_direction = -1;
       break;
     case 's':
     case 'S':
+      rotX_direction = 1;
       break;
     case 'd':
     case 'D':
+      rotY_direction = -1;
       break;
     case ' ':
+      if (transY_speed <= 0.0) {
+        // jump
+        // transY_speed = 2.0;
+      }
       break;
   }
 
@@ -286,12 +292,24 @@ void glut_keyboard(unsigned char key, int x, int y) {
 }
 
 void glut_keyboardup(unsigned char key, int x, int y) {
+  switch(key) {
+    case 'a':
+    case 'A':
+    case 'd':
+    case 'D':
+      rotY_direction = 0;
+      break;
+    case 'w':
+    case 'W':
+    case 's':
+    case 'S':
+      rotX_direction = 0;
+      break;
+  }
 }
 
 void glut_special(int key, int x, int y) {
   int modifiers = glutGetModifiers();
-  if ((modifiers && GLUT_ACTIVE_ALT) == GLUT_ACTIVE_ALT)  strife = 1;
-  else  strife = 0;
 
   if ((modifiers & GLUT_ACTIVE_SHIFT) == GLUT_ACTIVE_SHIFT) speed_factor = 0.1;
   else  speed_factor = 1;
@@ -300,17 +318,11 @@ void glut_special(int key, int x, int y) {
     case GLUT_KEY_F1:
       view_mode = MODE_OBJECT;
       break;
-    case GLUT_KEY_F2:
-      view_mode = MODE_CAMERA;
-      break;
-    case GLUT_KEY_F3:
-      view_mode = MODE_LIGHT;
-      break;
-    case GLUT_KEY_F4:
+    case GLUT_KEY_F12:
       debug ^= true;
       break;
     case GLUT_KEY_LEFT:
-      rotY_direction = 1;
+      transX_direction = 1;
       break;
     case GLUT_KEY_UP:
       transZ_direction = 1;
@@ -319,7 +331,7 @@ void glut_special(int key, int x, int y) {
       transZ_direction = -1;
       break;
     case GLUT_KEY_RIGHT:
-      rotY_direction = -1;
+      transX_direction = -1;
       break;
     case GLUT_KEY_HOME:
       init_view();
@@ -333,15 +345,11 @@ void glut_specialup(int key, int x, int y) {
   switch(key) {
     case GLUT_KEY_LEFT:
     case GLUT_KEY_RIGHT:
-      rotY_direction = 0;
+      transX_direction = 0;
       break;
     case GLUT_KEY_UP:
     case GLUT_KEY_DOWN:
       transZ_direction = 0;
-      break;
-    case GLUT_KEY_PAGE_UP:
-    case GLUT_KEY_PAGE_DOWN:
-      rotX_direction = 0;
       break;
   }
 }
@@ -492,37 +500,44 @@ void logic() {
   last_ticks = glutGet(GLUT_ELAPSED_TIME);
 
   float delta_transZ = transZ_direction * delta_t / 1000.0 * 5.0 * speed_factor; // 5 units per second
-  float delta_transX = 0, delta_transY = 0, delta_rotY = 0, delta_rotX = 0;
-  if (strife) {
-    delta_transX = rotY_direction * delta_t / 1000.0 * 3.0 * speed_factor; // 3 units per second
-    delta_transY = rotX_direction * delta_t / 1000.0 * 3.0 * speed_factor; // 3 units per second
-  }
-  else {
-    delta_rotY = rotY_direction * delta_t / 1000.0 * 120 * speed_factor; // 120°per second
-    delta_rotX = rotX_direction * delta_t / 1000.0 * 120 * speed_factor; // 120°per second
-  }
+  float delta_transX = transX_direction * delta_t / 1000.0 * 5.0 * speed_factor; // 5 units per second
+  float delta_transY = 0.0; // -(transY_speed - delta_t * GRAVITY / 2.0) * delta_t / 1000.0 * 5.0 * speed_factor;
+  transY_speed = std::max(-20.0, transY_speed - delta_t * GRAVITY);
+  float delta_rotY = rotY_direction * delta_t / 1000.0 * 120 * speed_factor; // 120°per second
+  float delta_rotX = rotX_direction * delta_t / 1000.0 * 120 * speed_factor; // 120°per second
 
   if (view_mode == MODE_CAMERA) {
     // camera is reverse-facing, so reverse Z translation and X rotation.
     // in addition, the view matrix is the inverse of the camera2world(it's world->camera), so we'll reverse the transformations.
     // alternatively, imagine that you transform the world, instead of positioning the camera.
-    if (strife) {
-      transforms[MODE_CAMERA] = glm::translate(glm::mat4(1.0), glm::vec3(delta_transX, 0.0, 0.0)) * transforms[MODE_CAMERA];
-    }
-    else {
-      glm::vec3 y_axis_world = glm::mat3(transforms[MODE_CAMERA]) * glm::vec3(0.0, 1.0, 0.0);
-      transforms[MODE_CAMERA] = glm::rotate(glm::mat4(1.0), glm::radians(-delta_rotY), y_axis_world) * transforms[MODE_CAMERA];
-    }
 
-    if (strife) {
-      transforms[MODE_CAMERA] = glm::translate(glm::mat4(1.0), glm::vec3(0.0, delta_transY, 0.0)) * transforms[MODE_CAMERA];
-    }
-    else {
-      transforms[MODE_CAMERA] = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.0, delta_transZ)) * transforms[MODE_CAMERA];
-    }
+    transforms[MODE_CAMERA] = glm::translate(glm::mat4(1.0), glm::vec3(delta_transX, 0.0, 0.0)) * transforms[MODE_CAMERA];
+    transforms[MODE_CAMERA] = glm::translate(glm::mat4(1.0), glm::vec3(0.0, delta_transY, 0.0)) * transforms[MODE_CAMERA];
+    glm::vec3 y_axis_world = glm::mat3(transforms[MODE_CAMERA]) * glm::vec3(0.0, 1.0, 0.0);
+    transforms[MODE_CAMERA] = glm::rotate(glm::mat4(1.0), glm::radians(-delta_rotY), y_axis_world) * transforms[MODE_CAMERA];
+    transforms[MODE_CAMERA] = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.0, delta_transZ)) * transforms[MODE_CAMERA];
 
     transforms[MODE_CAMERA] = glm::rotate(glm::mat4(1.0), glm::radians(delta_rotX), glm::vec3(1.0, 0.0, 0.0)) * transforms[MODE_CAMERA];
   }
+  
+  // TODO: calculate collision to ground and move camera
+  /*
+  for (int i = 0; i < ground.size(); i++) {
+    if (ground[i].normals[0] != glm::vec3(0, 1, 0))  continue;
+    glm::vec4 min_p = transforms[MODE_CAMERA] * glm::vec4(ground[i].min_point, 1);
+    glm::vec4 max_p = transforms[MODE_CAMERA] * glm::vec4(ground[i].max_point, 1);
+    printf("(%lf, %lf, %lf, %lf) (%lf, %lf, %lf, %lf)\n", min_p.x, min_p.y, min_p.z, min_p.w, max_p.x, max_p.y, max_p.z, max_p.w);
+    if (min_p.x > 0.5 || max_p.x < -0.5)  continue;
+    if (min_p.y > 0.0 || max_p.y <= -1.0)  continue;
+    if (min_p.z > 0.5 || max_p.z < -0.5)  continue;
+    // it collides!
+    printf("collides!\n");
+    transforms[MODE_CAMERA] = glm::translate(glm::mat4(1), glm::vec3(0, 1.0 + min_p.y, 0)) * transforms[MODE_CAMERA];
+    transY_speed = 0.0;
+  }
+  float y_pos = -(transforms[MODE_CAMERA] * glm::vec4(0, 0, 0, 1)).y;
+  printf("%lf %lf %lf %lf\n", y_pos, transY_speed, delta_transY, delta_t);
+  */
 
   // handle portals
   // movement of the camera in world view
@@ -991,8 +1006,3 @@ void draw() {
   draw_camera();
   */
 }
-
-// TODO: failed to render tri-loop portals like below
-//           portal1|----------|portal1'
-//  portal2=portal1'|----------|portal2'
-//  portal3=portal2'|----------|portal3'=portal1

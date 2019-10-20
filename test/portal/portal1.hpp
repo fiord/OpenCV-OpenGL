@@ -41,8 +41,14 @@ std::set<std::pair<int, int>> target_portals[3][2];
 std::vector<Mesh> ground, main_object;
 Mesh light_bbox;
 std::vector<Mesh>  portals[2];
+glm::mat4 camera_view;
 
 void world_init() {
+  camera_view = glm::lookAt(
+      glm::vec3(0.0, 1.0, 1.5), // eye
+      glm::vec3(0.0, 1.0, 0.0), // direction
+      glm::vec3(0.0, 1.0, 0.0)  // up
+  );
   main_object = std::vector<Mesh>(1);
   // load_obj("cube.obj", &main_object[0]);
   main_object[0].object2world = glm::translate(glm::mat4(1), glm::vec3(0, 1 - 0, 0));

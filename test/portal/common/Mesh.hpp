@@ -9,6 +9,8 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <algorithm>
+#include <limits>
 
 GLuint attribute_v_coord, attribute_v_normal;
 GLuint uniform_m, uniform_v, uniform_p;
@@ -22,6 +24,7 @@ class Mesh {
     std::vector<glm::vec3> normals;
     std::vector<GLushort> elements;
     glm::mat4 object2world;
+    glm::vec3 min_point, max_point;
     glm::vec3 color;
 
     Mesh() : vbo_vertices(0), vbo_normals(0), ibo_elements(0), object2world(glm::mat4(1)), color(glm::vec3(1)) {}
@@ -39,6 +42,18 @@ class Mesh {
 
     // store object vertices, normals and/or elements in graphic card buffers
     void upload() {
+      // set boundary
+      float min_x, min_y, min_z, max_x, max_y, max_z;
+      min_x = min_y = min_z = std::numeric_limits<float>::max();
+      max_x = max_y = max_z = std::numeric_limits<float>::min();
+      for (int i = 0; i < this->vertices.size(); i++) {
+        min_x = std::min(min_x, this->vertices[i].x); max_x = std::max(max_x, this->vertices[i].x);
+        min_y = std::min(min_y, this->vertices[i].y); max_y = std::max(max_y, this->vertices[i].y);
+        min_z = std::min(min_z, this->vertices[i].z); max_z = std::max(max_z, this->vertices[i].z);
+      }
+      min_point = glm::vec3(min_x, min_y, min_z);
+      max_point = glm::vec3(max_x, max_y, max_z);
+
       if (this->vertices.size() > 0) {
         glGenBuffers(1, &this->vbo_vertices);
         glBindBuffer(GL_ARRAY_BUFFER, this->vbo_vertices);
